@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify, session
 import re
+import os
 from typing import List, Dict, Tuple
 
 app = Flask(__name__)
-app.secret_key = 'preconleague-secret-key'  # In production, use a real secret key
+# Use environment variable for secret key in production
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'preconleague-secret-key-dev-only')
 
 def parse_decklist(decklist_text: str) -> Tuple[str, List[Dict[str, any]]]:
     """
@@ -98,4 +100,8 @@ def logout():
     return jsonify({'success': True})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Debug mode should be disabled in production
+    # Set environment variable FLASK_DEBUG=0 to disable debug mode
+    import os
+    debug_mode = os.getenv('FLASK_DEBUG', '1') == '1'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

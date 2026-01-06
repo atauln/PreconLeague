@@ -15,6 +15,19 @@ A makeshift front-end for the Precon League application with a simple login scre
 pip install -r requirements.txt
 ```
 
+## Configuration
+
+The application uses environment variables for configuration:
+
+- `FLASK_SECRET_KEY`: Secret key for session management (required for production)
+- `FLASK_DEBUG`: Set to `0` to disable debug mode in production (default: `1`)
+
+For production deployment:
+```bash
+export FLASK_SECRET_KEY="your-secure-random-secret-key"
+export FLASK_DEBUG=0
+```
+
 ## Running the Application
 
 1. Start the Flask server:
