@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precon League - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h1>Precon League</h1>
+            <p class="subtitle">Enter your username to continue</p>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Continue</button>
+                
+                <div id="error-message" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const errorDiv = document.getElementById('error-message');
+            
+            if (!username) {
+                errorDiv.textContent = 'Please enter a username';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = '/deck';
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                console.error('Login error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

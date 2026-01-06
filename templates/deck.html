@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precon League - Deck Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Precon League</h1>
+            <div class="user-info">
+                <span>Welcome, <strong>{{ username }}</strong></span>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+        </div>
+
+        <div class="deck-container">
+            <div class="deck-input">
+                <h2>Paste Your Decklist</h2>
+                <p class="help-text">
+                    Paste your decklist in any format (e.g., "1 Card Name" or "Card Name")
+                </p>
+                <textarea id="decklistInput" placeholder="1 Sol Ring&#10;1 Command Tower&#10;1 Lightning Greaves&#10;..."></textarea>
+                <button id="parseBtn" class="btn btn-primary">Preview Deck</button>
+            </div>
+
+            <div class="deck-preview" id="deckPreview">
+                <h2>Deck Preview</h2>
+                <div id="previewContent">
+                    <p class="placeholder">Your deck will appear here after you paste and preview it.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('parseBtn').addEventListener('click', async () => {
+            const decklist = document.getElementById('decklistInput').value;
+            const previewContent = document.getElementById('previewContent');
+            
+            if (!decklist.trim()) {
+                previewContent.innerHTML = '<p class="error">Please paste a decklist first.</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/parse_deck', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ decklist })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayDeck(data);
+                } else {
+                    previewContent.innerHTML = `<p class="error">${data.error || 'Failed to parse deck'}</p>`;
+                }
+            } catch (error) {
+                previewContent.innerHTML = '<p class="error">An error occurred while parsing the deck.</p>';
+                console.error('Parse error:', error);
+            }
+        });
+
+        function displayDeck(data) {
+            const previewContent = document.getElementById('previewContent');
+            
+            let html = '<div class="deck-info">';
+            html += `<div class="deck-stat"><span class="label">Commander:</span> <span class="value">${data.commander || 'Not detected'}</span></div>`;
+            html += `<div class="deck-stat"><span class="label">Total Cards:</span> <span class="value">${data.total_cards}</span></div>`;
+            html += '</div>';
+            
+            html += '<div class="card-list">';
+            html += '<h3>Decklist</h3>';
+            html += '<ul>';
+            
+            data.cards.forEach(card => {
+                html += `<li><span class="quantity">${card.quantity}x</span> ${card.name}</li>`;
+            });
+            
+            html += '</ul>';
+            html += '</div>';
+            
+            previewContent.innerHTML = html;
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
