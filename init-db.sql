@@ -15,12 +15,13 @@ CREATE TABLE users (
 
 CREATE TABLE cards (
     card_id TEXT PRIMARY KEY,
-    tcgplayer_id TEXT
+    card_name TEXT NOT NULL
 );
 
 CREATE TABLE decks (
     deck_id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(user_id)
+    user_id INTEGER REFERENCES users(user_id),
+    deck_name TEXT NOT NULL
 );
 
 CREATE TABLE snapshots (
@@ -34,8 +35,7 @@ CREATE TABLE snapshots (
 CREATE TABLE library_cards (
     library_card_id SERIAL PRIMARY KEY,
     snapshot_id INTEGER REFERENCES snapshots(snapshot_id),
-    card_id TEXT REFERENCES cards(card_id),
-    quantity INTEGER NOT NULL
+    card_id TEXT REFERENCES cards(card_id)
 );
 
 --Indexes for performance optimization
