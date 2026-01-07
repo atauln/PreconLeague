@@ -156,6 +156,37 @@ async def get_library_cards_by_snapshot(snapshot_id: int) -> List[Dict[str, Any]
     return await execute_query(query, (snapshot_id,))
 
 # Additional complex retrieval functions can be added as needed
+async def get_deck_with_snapshots(deck_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieve a deck along with its snapshots"""
+    deck = await get_deck_by_id(deck_id)
+    if not deck:
+        return None
+    
+    query = "SELECT * FROM snapshots WHERE deck_id = $1;"
+    snapshots = await execute_query(query, (deck_id,))
+    deck['snapshots'] = snapshots
+    return deck
+
+async def get_snapshot_with_library(snapshot_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieve a snapshot along with its library cards"""
+    snapshot = await get_snapshot_by_id(snapshot_id)
+    if not snapshot:
+        return None
+    
+    query = """
+    SELECT lc.card_id, c.card_name 
+    FROM library_cards lc
+    JOIN cards c ON lc.card_id = c.card_id
+    WHERE lc.snapshot_id = $1;
+    """
+    library_cards = await execute_query(query, (snapshot_id,))
+    snapshot['library_cards'] = library_cards
+    return snapshot
+
+async def get_user_decks(user_id: int) -> List[Dict[str, Any]]:
+    """Retrieve all decks for a specific user"""
+    query = "SELECT * FROM decks WHERE user_id = $1;"
+    return await execute_query(query, (user_id,))
 
 # Bulk retrieval functions
 async def get_all_users() -> List[Dict[str, Any]]:
