@@ -1,11 +1,16 @@
 from fastapi import FastAPI
-from routers import users, decks
+from routers import users, decks, snapshots
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(
+    title="Precon League API",
+    description="Internal API for @atauln's MTG Preconstructed Deck League",
+    version="1.0.0",
+)
 
 app.include_router(users.router)
 app.include_router(decks.router)
+app.include_router(snapshots.router)
 
 @app.get("/")
 async def read_root():
