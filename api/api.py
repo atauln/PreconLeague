@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import users, decks, snapshots
+from routers import users, decks, snapshots, cards
 import uvicorn
 
 app = FastAPI(
@@ -11,6 +11,7 @@ app = FastAPI(
 app.include_router(users.router)
 app.include_router(decks.router)
 app.include_router(snapshots.router)
+app.include_router(cards.router)
 
 @app.get("/")
 async def read_root():
