@@ -3,7 +3,6 @@ from typing import Any, Dict
 from fastapi import APIRouter
 from db import get_user_by_id, get_all_users, create_user
 
-
 router = APIRouter(
     prefix="/users",
     tags=["users"],

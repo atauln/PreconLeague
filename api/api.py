@@ -1,11 +1,11 @@
 from fastapi import FastAPI
-from routers import users
+from routers import users, decks
 import uvicorn
 
 app = FastAPI()
 
-user_routers = users.router
-app.include_router(user_routers)
+app.include_router(users.router)
+app.include_router(decks.router)
 
 @app.get("/")
 async def read_root():
