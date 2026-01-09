@@ -250,3 +250,25 @@ async def get_deck_snapshots(deck_id: int) -> List[Dict[str, Any]]:
     """Retrieve all snapshots for a specific deck"""
     query = "SELECT * FROM snapshots WHERE deck_id = $1;"
     return await execute_query(query, (deck_id,))
+
+async def initialize_database():
+    """Initialize the database connection using the file init-db.sql"""
+    conn = await get_connection()
+    if not conn:
+        print("Failed to connect to the database for initialization.")
+        return
+    
+    try:
+        with open('init-db.sql', 'r') as f:
+            init_sql = f.read()
+        await conn.execute(init_sql)
+        print("Database initialized successfully.")
+    except (asyncpg.PostgresError, FileNotFoundError) as e:
+        print(f"Database initialization error: {e}")
+    finally:
+        await conn.close()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(initialize_database())

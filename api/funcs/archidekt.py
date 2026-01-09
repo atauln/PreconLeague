@@ -1,6 +1,6 @@
 from pyrchidekt.api import getDeckById
 from pyrchidekt.deck import Deck as pDeck
-from models import Deck, Card
+from funcs.models import Deck, Card
 
 # Categories to ignore when processing the deck
 BLACKLISTED_CATEGORIES = [

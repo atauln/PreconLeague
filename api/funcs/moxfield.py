@@ -1,6 +1,6 @@
 import requests
 
-from models import Deck, Card
+from funcs.models import Deck, Card
 
 MOXFIELD_BASE_EXPORT_URL = "https://api2.moxfield.com/v3/decks/all/"
 
