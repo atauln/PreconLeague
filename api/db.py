@@ -96,24 +96,45 @@ async def create_card(card_id: str, card_name: str) -> bool:
     """
     return await execute_update(query, (card_id, card_name))
 
-async def create_deck(user_id: int, deck_name: str) -> Optional[int]:
+async def create_deck(user_id: int, deck_name: str, source: str, moxfield_deck_id: Optional[int], archidekt_deck_id: Optional[str]) -> Optional[int]:
     """Create a new deck and return the deck_id"""
-    query = """
-    INSERT INTO decks (user_id, deck_name) 
-    VALUES ($1, $2) 
-    RETURNING deck_id;
-    """
-    result = await execute_update_returning(query, (user_id, deck_name))
+    if source not in ['moxfield', 'archidekt']:
+        print(f"Invalid source: {source}")
+        return None
+    if source == 'moxfield':
+        query = """
+        INSERT INTO decks (user_id, deck_name, source, moxfield_deck_id) 
+        VALUES ($1, $2, $3, $4) 
+        RETURNING deck_id;
+        """
+        params = (user_id, deck_name, source, moxfield_deck_id)
+    else:  # archidekt
+        query = """
+        INSERT INTO decks (user_id, deck_name, source, archidekt_deck_id) 
+        VALUES ($1, $2, $3, $4) 
+        RETURNING deck_id;
+        """
+        params = (user_id, deck_name, source, archidekt_deck_id)
+    result = await execute_update_returning(query, params)
     return result['deck_id'] if result else None
 
-async def create_snapshot(deck_id: int, commander_id: str, est_power: float) -> Optional[int]:
+async def create_snapshot(deck_id: int, commander_id: str, est_power: float, created_at: str = None) -> Optional[int]:
     """Create a new snapshot and return the snapshot_id"""
-    query = """
-    INSERT INTO snapshots (deck_id, commander_id, est_power) 
-    VALUES ($1, $2, $3) 
-    RETURNING snapshot_id;
-    """
-    result = await execute_update_returning(query, (deck_id, commander_id, est_power))
+    if not created_at:
+        query = """
+        INSERT INTO snapshots (deck_id, commander_id, created_at, est_power)
+        VALUES ($1, $2, NOW(), $3)
+        RETURNING snapshot_id;
+        """
+        params = (deck_id, commander_id, est_power)
+    else:
+        query = """
+        INSERT INTO snapshots (deck_id, commander_id, created_at, est_power) 
+        VALUES ($1, $2, $3, $4) 
+        RETURNING snapshot_id;
+        """
+        params = (deck_id, commander_id, created_at, est_power)
+    result = await execute_update_returning(query, params)
     return result['snapshot_id'] if result else None
 
 async def associate_card_with_snapshot(snapshot_id: int, card_id: str) -> bool:
@@ -187,6 +208,18 @@ async def get_user_decks(user_id: int) -> List[Dict[str, Any]]:
     """Retrieve all decks for a specific user"""
     query = "SELECT * FROM decks WHERE user_id = $1;"
     return await execute_query(query, (user_id,))
+
+async def find_deck_by_moxfield_id(moxfield_deck_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieve a deck by its Moxfield deck ID"""
+    query = "SELECT * FROM decks WHERE moxfield_deck_id = $1;"
+    results = await execute_query(query, (moxfield_deck_id,))
+    return results[0] if results else None
+
+async def find_deck_by_archidekt_id(archidekt_deck_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieve a deck by its Archidekt deck ID"""
+    query = "SELECT * FROM decks WHERE archidekt_deck_id = $1;"
+    results = await execute_query(query, (archidekt_deck_id,))
+    return results[0] if results else None
 
 # Bulk retrieval functions
 async def get_all_users() -> List[Dict[str, Any]]:

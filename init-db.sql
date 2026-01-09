@@ -20,9 +20,10 @@ CREATE TABLE cards (
 
 CREATE TABLE decks (
     deck_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id),
     moxfield_deck_id TEXT NOT NULL UNIQUE,
     archidekt_deck_id INTEGER NOT NULL UNIQUE,
-    user_id INTEGER REFERENCES users(user_id),
+    source ENUM('moxfield', 'archidekt') NOT NULL,
     deck_name TEXT NOT NULL
 );
 

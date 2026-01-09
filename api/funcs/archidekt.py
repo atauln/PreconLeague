@@ -9,12 +9,12 @@ BLACKLISTED_CATEGORIES = [
 ]
 
 # Internal function to fetch the deck without processing
-def __fetch_deck_unprocessed(deck_id: int) -> pDeck:
+def __fetch_archidekt_deck_unprocessed(deck_id: int) -> pDeck:
     return getDeckById(deck_id)
 
 # Main function to fetch and process the deck
-def fetch_deck(deck_id: int) -> Deck:
-    deck = __fetch_deck_unprocessed(deck_id)
+def fetch_archidekt_deck(deck_id: int) -> Deck:
+    deck = __fetch_archidekt_deck_unprocessed(deck_id)
     proc_deck = Deck(deck.id, deck.name, deck.owner.id, deck.owner.username, source="Archidekt")
 
     card_dict = {}
@@ -38,5 +38,5 @@ def fetch_deck(deck_id: int) -> Deck:
     return proc_deck
 
 if __name__ == "__main__":
-    deck = fetch_deck(18053512)
+    deck = fetch_archidekt_deck(18053512)
     print(deck)
