@@ -87,14 +87,14 @@ async def create_user(user_name: str) -> Optional[int]:
     result = await execute_update_returning(query, (user_name,))
     return result['user_id'] if result else None
 
-async def create_card(card_id: str, card_name: str) -> bool:
+async def create_card(oracle_card_id: str, card_name: str) -> bool:
     """Create a new card"""
     query = """
-    INSERT INTO cards (card_id, card_name) 
+    INSERT INTO cards (oracle_card_id, card_name) 
     VALUES ($1, $2)
-    ON CONFLICT (card_id) DO NOTHING;
+    ON CONFLICT (oracle_card_id) DO NOTHING;
     """
-    return await execute_update(query, (card_id, card_name))
+    return await execute_update(query, (oracle_card_id, card_name))
 
 async def create_deck(user_id: int, deck_name: str, source: str, moxfield_deck_id: Optional[int], archidekt_deck_id: Optional[str]) -> Optional[int]:
     """Create a new deck and return the deck_id"""
@@ -155,7 +155,7 @@ async def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
 
 async def get_card_by_id(card_id: str) -> Optional[Dict[str, Any]]:
     """Retrieve a card by card_id"""
-    query = "SELECT * FROM cards WHERE card_id = $1;"
+    query = "SELECT * FROM cards WHERE card_oracle_card_id = $1;"
     results = await execute_query(query, (card_id,))
     return results[0] if results else None
 

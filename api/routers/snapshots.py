@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_snapshots
-from db import get_snapshot_with_library
+from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
+from db import get_card_by_id, create_card
+from funcs.archidekt import fetch_archidekt_deck
+from funcs.moxfield import fetch_moxfield_deck
 from typing import Any, Dict
 
 router = APIRouter(
@@ -46,3 +49,42 @@ async def read_snapshot_with_library(snapshot_id: int):
     if snapshot:
         return snapshot
     raise HTTPException(status_code=404, detail="Snapshot not found")
+
+@router.post("/create_snapshot/{deck_id}")
+async def create_snapshot(deck_id: int):
+    deck = await get_deck_by_id(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    
+    source = deck.get("source")
+    source_deck_id = deck.get("moxfield_deck_id") if source == "moxfield" else deck.get("archidekt_deck_id")
+    
+    if source == "moxfield":
+        proc_deck = fetch_moxfield_deck(source_deck_id)
+    elif source == "archidekt":
+        proc_deck = fetch_archidekt_deck(source_deck_id)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid deck source")
+    
+    # For simplicity, let's assume the first commander is the main one
+    if not proc_deck.commanders:
+        raise HTTPException(status_code=400, detail="No commanders found in the deck")
+    
+    commander = proc_deck.commanders[0]
+    snapshot_id = await create_snapshot(
+        deck_id=deck_id,
+        commander_id=commander.id,
+        created_at="now()",  # Placeholder for actual timestamp
+        est_power=0.0  # Placeholder for actual estimated power calculation
+    )
+
+    for card in proc_deck.library:
+        # Ensure the card exists in the database
+        existing_card = await get_card_by_id(card.id)
+        if not existing_card:
+            await create_card(card.id, card.name)
+        await associate_card_with_snapshot(snapshot_id, card.id)
+    
+    if snapshot_id:
+        return {"snapshot_id": snapshot_id, "deck_id": deck_id}
+    raise HTTPException(status_code=500, detail="Failed to create snapshot")

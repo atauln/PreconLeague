@@ -38,10 +38,9 @@ CREATE TABLE snapshots (
 CREATE TABLE library_cards (
     library_card_id SERIAL PRIMARY KEY,
     snapshot_id INTEGER REFERENCES snapshots(snapshot_id),
-    card_id TEXT REFERhttps://github.com/atauln/PreconLeague/blob/main/api/funcs/archidekt.pyENCES cards(card_id)
+    card_id TEXT REFERENCES cards(oracle_card_id)
 );
 
 --Indexes for performance optimization
-
 --Index on snapshot_id as it's frequently queried for each card in the library
 CREATE INDEX idx_library_snapshot ON library_cards(snapshot_id);
