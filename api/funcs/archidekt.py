@@ -53,7 +53,7 @@ def fetch_deck(deck_id: int) -> ProcDeck:
     for category in deck.categories:
         if category.name.lower() == "commander": # special handling for commanders
             proc_deck.commanders = [
-                ProcCard(card.id, card.card.oracle_card.name, card.quantity)
+                ProcCard(card.card.uid, card.card.oracle_card.name, card.quantity)
                 for card in category.cards]
             continue
         if category.name.lower() in BLACKLISTED_CATEGORIES: # skip anything but the mainboard
@@ -61,7 +61,7 @@ def fetch_deck(deck_id: int) -> ProcDeck:
         for card in category.cards:
             if card.categories and any(cat.lower() in BLACKLISTED_CATEGORIES for cat in card.categories):
                 continue # double check, since some cards have multiple categories (including maybeboard/sideboard)
-            card_dict[card.id] = ProcCard(card.id, card.card.oracle_card.name, card.quantity)
+            card_dict[card.card.uid] = ProcCard(card.card.uid, card.card.oracle_card.name, card.quantity)
     
     # convert the set to a list for better usability
     proc_deck.library = list(card_dict.values())

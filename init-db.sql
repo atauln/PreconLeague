@@ -14,12 +14,14 @@ CREATE TABLE users (
 );
 
 CREATE TABLE cards (
-    card_id TEXT PRIMARY KEY,
+    oracle_card_id TEXT NOT NULL PRIMARY KEY,
     card_name TEXT NOT NULL
 );
 
 CREATE TABLE decks (
     deck_id SERIAL PRIMARY KEY,
+    moxfield_deck_id TEXT NOT NULL UNIQUE,
+    archidekt_deck_id INTEGER NOT NULL UNIQUE,
     user_id INTEGER REFERENCES users(user_id),
     deck_name TEXT NOT NULL
 );
@@ -35,7 +37,7 @@ CREATE TABLE snapshots (
 CREATE TABLE library_cards (
     library_card_id SERIAL PRIMARY KEY,
     snapshot_id INTEGER REFERENCES snapshots(snapshot_id),
-    card_id TEXT REFERENCES cards(card_id)
+    card_id TEXT REFERhttps://github.com/atauln/PreconLeague/blob/main/api/funcs/archidekt.pyENCES cards(card_id)
 );
 
 --Indexes for performance optimization
