@@ -118,22 +118,102 @@ async def create_deck(user_id: int, deck_name: str, source: str, moxfield_deck_u
     result = await execute_update_returning(query, params)
     return result['deck_id'] if result else None
 
-async def create_snapshot(deck_id: int, commander_id: str, est_power: float, created_at: str = None) -> Optional[int]:
+async def create_snapshot(
+    deck_id: int,
+    commander_id: str,
+    salt_rating: Optional[float] = None,
+    synergy_rating: Optional[float] = None,
+    power_level_rating: Optional[float] = None,
+    threat_rating: Optional[float] = None,
+    bracket_rating: Optional[float] = None,
+    overall_rating: Optional[float] = None,
+    manabase_score: Optional[float] = None,
+    power_level_display_value: Optional[int] = None,
+    combo_rating: Optional[float] = None,
+    archetype_minor: Optional[str] = None,
+    archetype_major: Optional[str] = None,
+    price_usd: Optional[float] = None,
+    created_at: Optional[str] = None,
+) -> Optional[int]:
     """Create a new snapshot and return the snapshot_id"""
-    if not created_at:
+    if created_at:
         query = """
-        INSERT INTO snapshots (deck_id, commander_id, created_at, est_power)
-        VALUES ($1, $2, NOW(), $3)
+        INSERT INTO snapshots (
+            deck_id,
+            commander_id,
+            created_at,
+            salt_rating,
+            synergy_rating,
+            power_level_rating,
+            threat_rating,
+            bracket_rating,
+            overall_rating,
+            manabase_score,
+            power_level_display_value,
+            combo_rating,
+            archetype_minor,
+            archetype_major,
+            price_usd
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+        )
         RETURNING snapshot_id;
         """
-        params = (deck_id, commander_id, est_power)
+        params = (
+            deck_id,
+            commander_id,
+            created_at,
+            salt_rating,
+            synergy_rating,
+            power_level_rating,
+            threat_rating,
+            bracket_rating,
+            overall_rating,
+            manabase_score,
+            power_level_display_value,
+            combo_rating,
+            archetype_minor,
+            archetype_major,
+            price_usd,
+        )
     else:
         query = """
-        INSERT INTO snapshots (deck_id, commander_id, created_at, est_power) 
-        VALUES ($1, $2, $3, $4) 
+        INSERT INTO snapshots (
+            deck_id,
+            commander_id,
+            salt_rating,
+            synergy_rating,
+            power_level_rating,
+            threat_rating,
+            bracket_rating,
+            overall_rating,
+            manabase_score,
+            power_level_display_value,
+            combo_rating,
+            archetype_minor,
+            archetype_major,
+            price_usd
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+        )
         RETURNING snapshot_id;
         """
-        params = (deck_id, commander_id, created_at, est_power)
+        params = (
+            deck_id,
+            commander_id,
+            salt_rating,
+            synergy_rating,
+            power_level_rating,
+            threat_rating,
+            bracket_rating,
+            overall_rating,
+            manabase_score,
+            power_level_display_value,
+            combo_rating,
+            archetype_minor,
+            archetype_major,
+            price_usd,
+        )
     result = await execute_update_returning(query, params)
     return result['snapshot_id'] if result else None
 

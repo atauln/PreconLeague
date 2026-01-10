@@ -3,7 +3,7 @@ from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_
 from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
 from db import get_card_by_id, create_card
 from funcs.archidekt import fetch_archidekt_deck
-from funcs.moxfield import fetch_moxfield_deck, MOXFIELD_BASE_EXPORT_URL
+from funcs.moxfield import fetch_moxfield_deck
 from funcs.commandersalt import fetch_commandersalt_deck_data
 from typing import Any, Dict
 
@@ -58,15 +58,14 @@ async def create_snapshot(deck_id: int):
         raise HTTPException(status_code=404, detail="Deck not found")
     
     source = deck.get("source")
-    source_deck_id = deck.get("moxfield_deck_id") if source == "moxfield" else deck.get("archidekt_deck_id")
-    
+    source_deck_url = deck.get("moxfield_deck_url") if source == "moxfield" else deck.get("archidekt_deck_url")
+
     if source == "moxfield":
-        proc_deck = fetch_moxfield_deck(source_deck_id)
-        moxfield_url = f"{MOXFIELD_BASE_EXPORT_URL}{source_deck_id}"
-        commandersalt_data = fetch_commandersalt_deck_data(moxfield_url)
+        proc_deck = fetch_moxfield_deck(source_deck_url)
+        commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
     elif source == "archidekt":
-        proc_deck = fetch_archidekt_deck(source_deck_id)
-        archidekt_url = f"https://archidekt.com/decks/{source_deck_id}/export/proc/"
+        proc_deck = fetch_archidekt_deck(source_deck_url)
+        commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
     else:
         raise HTTPException(status_code=400, detail="Invalid deck source")
     
@@ -78,8 +77,18 @@ async def create_snapshot(deck_id: int):
     snapshot_id = await create_snapshot(
         deck_id=deck_id,
         commander_id=commander.id,
-        created_at="now()",  # Placeholder for actual timestamp
-        est_power=0.0  # Placeholder for actual estimated power calculation
+        salt_rating=commandersalt_data.salt_rating,
+        synergy_rating=commandersalt_data.synergy_rating,
+        power_level_rating=commandersalt_data.power_level_rating,
+        threat_rating=commandersalt_data.threat_rating,
+        bracket_rating=commandersalt_data.bracket_rating,
+        overall_rating=commandersalt_data.overall_rating,
+        manabase_score=commandersalt_data.manabase_score,
+        power_level_display_value=commandersalt_data.power_level_display_value,
+        combo_rating=commandersalt_data.combo_rating,
+        archetype_minor=commandersalt_data.archetype_minor,
+        archetype_major=commandersalt_data.archetype_major,
+        price_usd=commandersalt_data.price_usd,
     )
 
     for card in proc_deck.library:
