@@ -4,11 +4,12 @@ import Home from './pages/Home'
 import DeckEditor from './pages/DeckEditor'
 
 function App() {
+  const basename = (import.meta.env.BASE_URL as string) || '/'
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
-        <Route path="/PreconLeague/" element={<Home />} />
-        <Route path="/PreconLeague/decks/:deckId" element={<DeckEditor />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/decks/:deckId" element={<DeckEditor />} />
       </Routes>
     </BrowserRouter>
   )
