@@ -1,5 +1,6 @@
 import requests
 import json
+from models import CommanderSaltData
 
 BASE_URL = "https://api.commandersalt.com/decks"
 
@@ -37,10 +38,10 @@ def fetch_commandersalt_deck_data(deck_url: str) -> dict:
         'archetype_major': data.get('archetypeMajor'),
         'price_usd': float(data.get('price').get('usd')),
     }
-    return proc_data
+    return CommanderSaltData(**proc_data)
 
 if __name__ == "__main__":
     # Example usage
     deck_url = "https://archidekt.com/decks/18053512/anikthea_precon_league"
     deck_data = fetch_commandersalt_deck_data(deck_url)
-    print(json.dumps(deck_data, indent=2))
+    print(deck_data)
