@@ -25,23 +25,23 @@ def fetch_moxfield_deck(deck_url: str) -> Deck:
         source="Moxfield",
     )
 
-    for _, card_wrap in deck.get("boards").get("commanders").get("cards").items():
-        card = card_wrap.get("card")
-        card_obj = Card(
-            card_id=card.get("scryfall_id"),
-            name=card.get("name"),
+    deck_obj.commanders = [
+        Card(
+            card_id=card_wrap.get("card").get("scryfall_id"),
+            name=card_wrap.get("card").get("name"),
             quantity=card_wrap.get("quantity", 0)
         )
-        deck_obj.commanders.append(card_obj)
+        for _, card_wrap in deck.get("boards").get("commanders").get("cards").items()
+    ]
 
-    for _, card_wrap in deck.get("boards").get("mainboard").get("cards").items():
-        card = card_wrap.get("card")
-        card_obj = Card(
-            card_id=card.get("scryfall_id"),
-            name=card.get("name"),
+    deck_obj.library = [
+        Card(
+            card_id=card_wrap.get("card").get("scryfall_id"),
+            name=card_wrap.get("card").get("name"),
             quantity=card_wrap.get("quantity", 0)
         )
-        deck_obj.library.append(card_obj)
+        for _, card_wrap in deck.get("boards").get("mainboard").get("cards").items()
+    ]
     
     return deck_obj
 

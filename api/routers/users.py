@@ -1,4 +1,3 @@
-
 from typing import Any, Dict
 from fastapi import APIRouter, HTTPException
 from db import get_user_by_id, get_all_users, create_user
@@ -25,7 +24,6 @@ async def read_all_users():
 @router.post("/")
 async def register_user(user: Dict[str, Any]):
     user_name = user.get("user_name")
-    print(user_name)
     if not user_name:
         raise HTTPException(status_code=400, detail="user_name is required")
     user_id = await create_user(user_name)

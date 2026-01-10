@@ -25,10 +25,14 @@ CREATE TYPE source AS ENUM ('moxfield', 'archidekt');
 CREATE TABLE decks (
     deck_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id),
-    moxfield_deck_url TEXT NOT NULL UNIQUE,
-    archidekt_deck_url TEXT NOT NULL UNIQUE,
+    moxfield_deck_url TEXT UNIQUE,
+    archidekt_deck_url TEXT UNIQUE,
     source source NOT NULL,
-    deck_name TEXT NOT NULL
+    deck_name TEXT NOT NULL,
+    CHECK (
+        (source = 'moxfield' AND moxfield_deck_url IS NOT NULL AND archidekt_deck_url IS NULL) OR
+        (source = 'archidekt' AND archidekt_deck_url IS NOT NULL AND moxfield_deck_url IS NULL)
+    )
 );
 
 CREATE TABLE snapshots (
@@ -53,9 +57,11 @@ CREATE TABLE snapshots (
 CREATE TABLE library_cards (
     library_card_id SERIAL PRIMARY KEY,
     snapshot_id INTEGER REFERENCES snapshots(snapshot_id),
-    card_id TEXT REFERENCES cards(oracle_card_id)
+    card_id TEXT REFERENCES cards(oracle_card_id),
+    UNIQUE(snapshot_id, card_id)
 );
 
 --Indexes for performance optimization
---Index on snapshot_id as it's frequently queried for each card in the library
-CREATE INDEX idx_library_snapshot ON library_cards(snapshot_id);
+--Composite unique constraint on (snapshot_id, card_id) automatically creates an index
+--Index on card_id for reverse lookups (finding which snapshots contain a card)
+CREATE INDEX idx_library_card ON library_cards(card_id);

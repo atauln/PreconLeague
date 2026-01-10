@@ -18,13 +18,7 @@ DB_CONFIG = {
 async def get_connection():
     """Establish an async connection to the remote PostgreSQL database"""
     try:
-        conn = await asyncpg.connect(
-            host=DB_CONFIG['host'],
-            port=DB_CONFIG['port'],
-            database=DB_CONFIG['database'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password']
-        )
+        conn = await asyncpg.connect(**DB_CONFIG)
         return conn
     except asyncpg.PostgresError as e:
         print(f"Database connection error: {e}")
@@ -277,7 +271,7 @@ async def get_snapshot_with_library(snapshot_id: int) -> Optional[Dict[str, Any]
     query = """
     SELECT lc.card_id, c.card_name 
     FROM library_cards lc
-    JOIN cards c ON lc.card_id = c.card_id
+    JOIN cards c ON lc.card_id = c.oracle_card_id
     WHERE lc.snapshot_id = $1;
     """
     library_cards = await execute_query(query, (snapshot_id,))
@@ -320,9 +314,10 @@ async def get_all_decks() -> List[Dict[str, Any]]:
 async def get_all_snapshots() -> List[Dict[str, Any]]:
     """Retrieve all snapshots"""
     query = """
-    SELECT s.*, d.deck_name, d.user_id, d.user_name 
+    SELECT s.*, d.deck_name, d.user_id, u.user_name 
     FROM snapshots s
-    JOIN decks d ON s.deck_id = d.deck_id;
+    JOIN decks d ON s.deck_id = d.deck_id
+    JOIN users u ON d.user_id = u.user_id;
     """
     return await execute_query(query)
 

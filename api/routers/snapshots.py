@@ -62,12 +62,12 @@ async def create_snapshot(deck_id: int):
 
     if source == "moxfield":
         proc_deck = fetch_moxfield_deck(source_deck_url)
-        commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
     elif source == "archidekt":
         proc_deck = fetch_archidekt_deck(source_deck_url)
-        commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
     else:
         raise HTTPException(status_code=400, detail="Invalid deck source")
+    
+    commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
     
     # For simplicity, let's assume the first commander is the main one
     if not proc_deck.commanders:
