@@ -1,5 +1,4 @@
 import requests
-import json
 from .models import CommanderSaltData
 
 BASE_URL = "https://api.commandersalt.com/decks"
@@ -7,7 +6,6 @@ BASE_URL = "https://api.commandersalt.com/decks"
 def __fetch_commandersalt_deck_data(deck_url: str) -> dict:
     """Return data for a deck from commandersalt given its URL."""
     url = f"{BASE_URL}?url={deck_url}"
-    print(url)
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0",
         "Accept": "*/*",

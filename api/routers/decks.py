@@ -45,11 +45,11 @@ async def register_deck(data: Dict[str, Any]):
     if data.get("source") == "moxfield":
         if await find_deck_by_moxfield_url(data.get("moxfield_deck_url")) is not None:
             raise HTTPException(status_code=400, detail="Deck with this Moxfield URL already exists")
-        deck_data, full_url = fetch_moxfield_deck(data.get("moxfield_deck_url"))
+        deck_data = fetch_moxfield_deck(data.get("moxfield_deck_url"))
     else:  # archidekt
         if await find_deck_by_archidekt_url(data.get("archidekt_deck_url")) is not None:
             raise HTTPException(status_code=400, detail="Deck with this Archidekt URL already exists")
-        deck_data, full_url = fetch_archidekt_deck(data.get("archidekt_deck_url"))
+        deck_data = fetch_archidekt_deck(data.get("archidekt_deck_url"))
     
     # ensure user exists
     if await get_user_by_id(data.get("user_id")) is None:
