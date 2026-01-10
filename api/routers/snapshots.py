@@ -59,7 +59,7 @@ async def read_snapshot_with_library(snapshot_id: int):
     raise HTTPException(status_code=404, detail="Snapshot not found")
 
 @router.post("/create_snapshot/{deck_id}")
-async def create_snapshot(deck_id: int):
+async def trigger_create_snapshot(deck_id: int):
     deck = await get_deck_by_id(deck_id)
     if not deck:
         raise HTTPException(status_code=404, detail="Deck not found")
@@ -81,6 +81,12 @@ async def create_snapshot(deck_id: int):
         raise HTTPException(status_code=400, detail="No commanders found in the deck")
     
     commander = proc_deck.commanders[0]
+
+    # Ensure commander card exists in `cards` table because `snapshots.commander_id` is FK to cards(oracle_card_id)
+    existing_commander = await get_card_by_id(commander.id)
+    if not existing_commander:
+        await create_card(commander.id, commander.name)
+
     snapshot_id = await create_snapshot(
         deck_id=deck_id,
         commander_id=commander.id,
