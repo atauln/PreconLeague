@@ -7,8 +7,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/decks/:deckId" element={<DeckEditor />} />
+        <Route path="/PreconLeague/" element={<Home />} />
+        <Route path="/PreconLeague/decks/:deckId" element={<DeckEditor />} />
       </Routes>
     </BrowserRouter>
   )
