@@ -2,6 +2,10 @@
 
 Internal API for @atauln's MTG Preconstructed Deck League
 
+## Live Frontend
+
+The frontend is automatically deployed to GitHub Pages: https://atauln.github.io/PreconLeague/
+
 ## Overview
 
 This is a FastAPI-based REST API for managing MTG (Magic: The Gathering) preconstructed deck leagues. It supports deck tracking from Moxfield and Archidekt, snapshot management, and integration with Commander Salt for deck analysis.
