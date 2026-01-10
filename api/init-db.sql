@@ -25,10 +25,14 @@ CREATE TYPE source AS ENUM ('moxfield', 'archidekt');
 CREATE TABLE decks (
     deck_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id),
-    moxfield_deck_url TEXT NOT NULL UNIQUE,
-    archidekt_deck_url TEXT NOT NULL UNIQUE,
+    moxfield_deck_url TEXT UNIQUE,
+    archidekt_deck_url TEXT UNIQUE,
     source source NOT NULL,
-    deck_name TEXT NOT NULL
+    deck_name TEXT NOT NULL,
+    CHECK (
+        (source = 'moxfield' AND moxfield_deck_url IS NOT NULL AND archidekt_deck_url IS NULL) OR
+        (source = 'archidekt' AND archidekt_deck_url IS NOT NULL AND moxfield_deck_url IS NULL)
+    )
 );
 
 CREATE TABLE snapshots (

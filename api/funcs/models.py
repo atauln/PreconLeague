@@ -18,10 +18,7 @@ class Deck:
         self.commanders: list[Card] = []
     
     def library_size(self) -> int:
-        total_quantity = sum(card.quantity for card in self.library)
-        commander_quantity = sum(card.quantity for card in self.commanders)
-        total_quantity += commander_quantity
-        return total_quantity
+        return sum(card.quantity for card in self.library) + sum(card.quantity for card in self.commanders)
     
     def __repr__(self):
         return (f"ProcDeck(id={self.id}, name='{self.name}', owner_id={self.owner_id}, "

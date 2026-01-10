@@ -18,13 +18,7 @@ DB_CONFIG = {
 async def get_connection():
     """Establish an async connection to the remote PostgreSQL database"""
     try:
-        conn = await asyncpg.connect(
-            host=DB_CONFIG['host'],
-            port=DB_CONFIG['port'],
-            database=DB_CONFIG['database'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password']
-        )
+        conn = await asyncpg.connect(**DB_CONFIG)
         return conn
     except asyncpg.PostgresError as e:
         print(f"Database connection error: {e}")
