@@ -7,6 +7,7 @@ from db import (
     get_user_by_id,
     get_user_by_name,
     create_user,
+    get_most_recent_snapshot_for_deck
 )
 from db import find_deck_by_moxfield_url, find_deck_by_archidekt_url
 from funcs.moxfield import fetch_moxfield_deck
@@ -79,3 +80,10 @@ async def register_deck(request: DeckRegisterRequest):
     if deck_id:
         return DeckRegisterResponse(deck_id=deck_id)
     raise HTTPException(status_code=500, detail="Failed to create deck")
+
+@router.get("/most_recent_snapshot/{deck_id}")
+async def read_most_recent_snapshot(deck_id: int):
+    snapshot = await get_most_recent_snapshot_for_deck(deck_id)
+    if snapshot:
+        return snapshot
+    raise HTTPException(status_code=404, detail="No snapshots found for this deck")
