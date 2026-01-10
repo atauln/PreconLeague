@@ -302,6 +302,17 @@ async def find_deck_by_archidekt_url(archidekt_deck_url: str) -> Optional[Dict[s
     results = await execute_query(query, (archidekt_deck_url,))
     return results[0] if results else None
 
+async def get_most_recent_snapshot_for_deck(deck_id: int) -> Optional[Dict[str, Any]]:
+    """Retrieve the most recent snapshot for a specific deck"""
+    query = """
+    SELECT * FROM snapshots 
+    WHERE deck_id = $1 
+    ORDER BY created_at DESC 
+    LIMIT 1;
+    """
+    results = await execute_query(query, (deck_id,))
+    return results[0] if results else None
+
 # Bulk retrieval functions
 async def get_all_users() -> List[Dict[str, Any]]:
     """Retrieve all users"""
