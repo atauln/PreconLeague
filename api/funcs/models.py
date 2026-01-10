@@ -70,3 +70,18 @@ class CommanderSaltData:
                 f"combo_rating={self.combo_rating}, archetype_minor='{self.archetype_minor}', "
                 f"archetype_major='{self.archetype_major}', price_usd={self.price_usd})")
 
+
+
+# Pydantic models for request/response schemas (used by FastAPI for validation + Swagger)
+from pydantic import BaseModel, HttpUrl
+from typing import Literal
+
+
+class DeckRegisterRequest(BaseModel):
+    source: Literal["moxfield", "archidekt"]
+    deck_url: HttpUrl
+
+
+class DeckRegisterResponse(BaseModel):
+    deck_id: int
+

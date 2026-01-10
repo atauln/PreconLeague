@@ -227,6 +227,13 @@ async def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
     results = await execute_query(query, (user_id,))
     return results[0] if results else None
 
+
+async def get_user_by_name(user_name: str) -> Optional[Dict[str, Any]]:
+    """Retrieve a user by user_name"""
+    query = "SELECT * FROM users WHERE user_name = $1;"
+    results = await execute_query(query, (user_name,))
+    return results[0] if results else None
+
 async def get_card_by_id(card_id: str) -> Optional[Dict[str, Any]]:
     """Retrieve a card by card_id"""
     query = "SELECT * FROM cards WHERE card_oracle_card_id = $1;"
