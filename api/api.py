@@ -1,11 +1,15 @@
 from fastapi import FastAPI
 from routers import users, decks, snapshots, cards
 import uvicorn
+import os
 
 app = FastAPI(
     title="Precon League API",
     description="Internal API for @atauln's MTG Preconstructed Deck League",
     version="1.0.0",
+    servers=[
+        {"url": os.getenv("API_URL", "http://localhost:8000"), "description": "Current API server"}
+    ]
 )
 
 app.include_router(users.router)
