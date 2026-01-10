@@ -36,7 +36,18 @@ CREATE TABLE snapshots (
     deck_id INTEGER REFERENCES decks(deck_id),
     commander_id TEXT REFERENCES cards(oracle_card_id),  -- The commander could switch between snapshots
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    est_power DECIMAL
+    salt_rating DECIMAL,
+    synergy_rating DECIMAL,
+    power_level_rating DECIMAL,
+    threat_rating DECIMAL,
+    bracket_rating DECIMAL,
+    overall_rating DECIMAL,
+    manabase_score DECIMAL,
+    power_level_display_value INT,
+    combo_rating DECIMAL,
+    archetype_minor TEXT,
+    archetype_major TEXT,
+    price_usd DECIMAL
 );
 
 CREATE TABLE library_cards (
