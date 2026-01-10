@@ -25,8 +25,8 @@ CREATE TYPE source AS ENUM ('moxfield', 'archidekt');
 CREATE TABLE decks (
     deck_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id),
-    moxfield_deck_id TEXT NOT NULL UNIQUE,
-    archidekt_deck_id INTEGER NOT NULL UNIQUE,
+    moxfield_deck_url TEXT NOT NULL UNIQUE,
+    archidekt_deck_url TEXT NOT NULL UNIQUE,
     source source NOT NULL,
     deck_name TEXT NOT NULL
 );

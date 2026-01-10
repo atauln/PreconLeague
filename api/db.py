@@ -96,25 +96,25 @@ async def create_card(oracle_card_id: str, card_name: str) -> bool:
     """
     return await execute_update(query, (oracle_card_id, card_name))
 
-async def create_deck(user_id: int, deck_name: str, source: str, moxfield_deck_id: Optional[int], archidekt_deck_id: Optional[str]) -> Optional[int]:
+async def create_deck(user_id: int, deck_name: str, source: str, moxfield_deck_url: Optional[str] = None, archidekt_deck_url: Optional[str] = None) -> Optional[int]:
     """Create a new deck and return the deck_id"""
     if source not in ['moxfield', 'archidekt']:
         print(f"Invalid source: {source}")
         return None
     if source == 'moxfield':
         query = """
-        INSERT INTO decks (user_id, deck_name, source, moxfield_deck_id) 
+        INSERT INTO decks (user_id, deck_name, source, moxfield_deck_url) 
         VALUES ($1, $2, $3, $4) 
         RETURNING deck_id;
         """
-        params = (user_id, deck_name, source, moxfield_deck_id)
+        params = (user_id, deck_name, source, moxfield_deck_url)
     else:  # archidekt
         query = """
-        INSERT INTO decks (user_id, deck_name, source, archidekt_deck_id) 
+        INSERT INTO decks (user_id, deck_name, source, archidekt_deck_url) 
         VALUES ($1, $2, $3, $4) 
         RETURNING deck_id;
         """
-        params = (user_id, deck_name, source, archidekt_deck_id)
+        params = (user_id, deck_name, source, archidekt_deck_url)
     result = await execute_update_returning(query, params)
     return result['deck_id'] if result else None
 
@@ -209,16 +209,16 @@ async def get_user_decks(user_id: int) -> List[Dict[str, Any]]:
     query = "SELECT * FROM decks WHERE user_id = $1;"
     return await execute_query(query, (user_id,))
 
-async def find_deck_by_moxfield_id(moxfield_deck_id: int) -> Optional[Dict[str, Any]]:
-    """Retrieve a deck by its Moxfield deck ID"""
-    query = "SELECT * FROM decks WHERE moxfield_deck_id = $1;"
-    results = await execute_query(query, (moxfield_deck_id,))
+async def find_deck_by_moxfield_url(moxfield_deck_url: str) -> Optional[Dict[str, Any]]:
+    """Retrieve a deck by its Moxfield deck URL"""
+    query = "SELECT * FROM decks WHERE moxfield_deck_url = $1;"
+    results = await execute_query(query, (moxfield_deck_url,))
     return results[0] if results else None
 
-async def find_deck_by_archidekt_id(archidekt_deck_id: str) -> Optional[Dict[str, Any]]:
-    """Retrieve a deck by its Archidekt deck ID"""
-    query = "SELECT * FROM decks WHERE archidekt_deck_id = $1;"
-    results = await execute_query(query, (archidekt_deck_id,))
+async def find_deck_by_archidekt_url(archidekt_deck_url: str) -> Optional[Dict[str, Any]]:
+    """Retrieve a deck by its Archidekt deck URL"""
+    query = "SELECT * FROM decks WHERE archidekt_deck_url = $1;"
+    results = await execute_query(query, (archidekt_deck_url,))
     return results[0] if results else None
 
 # Bulk retrieval functions

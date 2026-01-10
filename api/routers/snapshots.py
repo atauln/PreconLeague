@@ -3,7 +3,8 @@ from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_
 from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
 from db import get_card_by_id, create_card
 from funcs.archidekt import fetch_archidekt_deck
-from funcs.moxfield import fetch_moxfield_deck
+from funcs.moxfield import fetch_moxfield_deck, MOXFIELD_BASE_EXPORT_URL
+from funcs.commandersalt import fetch_commandersalt_deck_data
 from typing import Any, Dict
 
 router = APIRouter(
@@ -61,8 +62,11 @@ async def create_snapshot(deck_id: int):
     
     if source == "moxfield":
         proc_deck = fetch_moxfield_deck(source_deck_id)
+        moxfield_url = f"{MOXFIELD_BASE_EXPORT_URL}{source_deck_id}"
+        commandersalt_data = fetch_commandersalt_deck_data(moxfield_url)
     elif source == "archidekt":
         proc_deck = fetch_archidekt_deck(source_deck_id)
+        archidekt_url = f"https://archidekt.com/decks/{source_deck_id}/export/proc/"
     else:
         raise HTTPException(status_code=400, detail="Invalid deck source")
     

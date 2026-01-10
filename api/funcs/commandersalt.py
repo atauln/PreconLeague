@@ -1,6 +1,6 @@
 import requests
 import json
-from models import CommanderSaltData
+from .models import CommanderSaltData
 
 BASE_URL = "https://api.commandersalt.com/decks"
 
