@@ -85,3 +85,43 @@ class DeckRegisterRequest(BaseModel):
 class DeckRegisterResponse(BaseModel):
     deck_id: int
 
+
+# Other request models used by routers for Swagger documentation
+class CreateCardRequest(BaseModel):
+    card_id: str
+    card_name: str
+
+
+class AssociateCardRequest(BaseModel):
+    snapshot_id: int
+    card_id: str
+
+
+class SnapshotCreateRequest(BaseModel):
+    deck_id: int
+    snapshot_name: str
+
+
+class UserCreateRequest(BaseModel):
+    user_name: str
+
+
+class UserCreateResponse(BaseModel):
+    user_id: int
+    user_name: str
+
+
+class CreateCardResponse(BaseModel):
+    card_id: str
+    card_name: str
+
+
+class AssociateCardResponse(BaseModel):
+    message: str
+
+
+class SnapshotCreateResponse(BaseModel):
+    snapshot_id: int
+    deck_id: int
+    snapshot_name: str | None = None
+

@@ -6,6 +6,7 @@ from funcs.archidekt import fetch_archidekt_deck
 from funcs.moxfield import fetch_moxfield_deck
 from funcs.commandersalt import fetch_commandersalt_deck_data
 from typing import Any, Dict
+from funcs.models import SnapshotCreateRequest, SnapshotCreateResponse
 
 router = APIRouter(
     prefix="/snapshots",
@@ -33,10 +34,16 @@ async def read_deck_snapshots(deck_id: int):
         return snapshots
     raise HTTPException(status_code=404, detail="No snapshots found for this deck")
 
-@router.post("/")
-async def create_new_snapshot(snapshot: Dict[str, Any]):
-    deck_id = snapshot.get("deck_id")
-    snapshot_name = snapshot.get("snapshot_name")
+@router.post("/", response_model=SnapshotCreateResponse)
+async def create_new_snapshot(snapshot: Any):
+    # Support both dict inputs (tests) and Pydantic models (FastAPI)
+    if isinstance(snapshot, dict):
+        deck_id = snapshot.get("deck_id")
+        snapshot_name = snapshot.get("snapshot_name")
+    else:
+        deck_id = getattr(snapshot, "deck_id", None)
+        snapshot_name = getattr(snapshot, "snapshot_name", None)
+
     if not deck_id or not snapshot_name:
         raise HTTPException(status_code=400, detail="deck_id and snapshot_name are required")
     snapshot_id = await create_snapshot(deck_id, snapshot_name)

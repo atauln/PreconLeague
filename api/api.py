@@ -3,13 +3,19 @@ from routers import users, decks, snapshots, cards
 import uvicorn
 import os
 
+def _build_servers_from_env() -> list | None:
+    api_url = os.getenv("API_URL", "").strip()
+    # Only use servers entry when a fully-qualified URL is provided (starts with http:// or https://)
+    if api_url.lower().startswith("http://") or api_url.lower().startswith("https://"):
+        return [{"url": api_url, "description": "Current API server"}]
+    return None
+
+
 app = FastAPI(
     title="Precon League API",
     description="Internal API for @atauln's MTG Preconstructed Deck League",
     version="1.0.0",
-    servers=[
-        {"url": os.getenv("API_URL", "http://localhost:8000"), "description": "Current API server"}
-    ]
+    servers=_build_servers_from_env() or None,
 )
 
 app.include_router(users.router)
