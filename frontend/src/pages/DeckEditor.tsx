@@ -74,55 +74,53 @@ export default function DeckEditor() {
 
   if (!deckId || isNaN(id)) {
     return (
-      <main style={{ padding: 16 }}>
-        <p>Invalid deck id. <Link to="/">Back</Link></p>
+      <main className="container mx-auto py-8">
+        <p>Invalid deck id. <Link to="/" className="text-sky-600">Back</Link></p>
       </main>
     )
   }
 
   return (
-    <main style={{ padding: 16 }}>
-      <h1>Deck editor</h1>
-      <p>
-        <Link to="/">← Back to home</Link>
-      </p>
+    <main className="container mx-auto py-8">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-semibold">Deck editor</h1>
+        <Link to="/" className="muted">← Back to home</Link>
+      </div>
 
       {loading && <p>Loading…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="text-red-600">{error}</p>}
 
       {deck && (
-        <section style={{ marginTop: 12 }}>
-          <h2>{deck.deck_name}</h2>
-          <div>Owner id: {deck.user_id}</div>
-          <div>Source: {deck.source}</div>
-          {deck.moxfield_deck_url && (
-            <div>
-              <a href={deck.moxfield_deck_url} target="_blank" rel="noreferrer">View Moxfield</a>
-            </div>
-          )}
-          {deck.archidekt_deck_url && (
-            <div>
-              <a href={deck.archidekt_deck_url} target="_blank" rel="noreferrer">View Archidekt</a>
-            </div>
-          )}
+        <section className="card mb-4">
+          <h2 className="text-lg font-medium">{deck.deck_name}</h2>
+          <div className="muted">Owner id: {deck.user_id}</div>
+          <div className="muted">Source: {deck.source}</div>
+          <div className="mt-2">
+            {deck.moxfield_deck_url && (
+              <a className="muted mr-3" href={deck.moxfield_deck_url} target="_blank" rel="noreferrer">View Moxfield</a>
+            )}
+            {deck.archidekt_deck_url && (
+              <a className="muted" href={deck.archidekt_deck_url} target="_blank" rel="noreferrer">View Archidekt</a>
+            )}
+          </div>
         </section>
       )}
 
-      <section style={{ marginTop: 20 }}>
-        <h3>Snapshots</h3>
-        <div style={{ marginBottom: 8 }}>
-          <button onClick={handleCreateSnapshot} disabled={creating || loading}>
+      <section>
+        <h3 className="text-lg font-medium mb-2">Snapshots</h3>
+        <div className="mb-3">
+          <button onClick={handleCreateSnapshot} disabled={creating || loading} className="btn">
             {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
           </button>
         </div>
         {snapshots.length === 0 && <p>No snapshots yet.</p>}
-        <ul>
+        <ul className="grid gap-3">
           {snapshots.map((s) => (
-            <li key={s.snapshot_id} style={{ padding: 8, border: '1px solid #eee', marginBottom: 6 }}>
+            <li key={s.snapshot_id} className="card">
               <div>
                 <strong>{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</strong>
               </div>
-              <div style={{ fontSize: 12, color: '#666' }}>{s.created_at}</div>
+              <div className="muted">{s.created_at}</div>
             </li>
           ))}
         </ul>

@@ -76,52 +76,35 @@ export default function Home() {
   }
 
   return (
-    <main style={{ padding: 16, fontFamily: 'system-ui, sans-serif' }}>
-      <h1>Precon League — Home</h1>
-      <p>
-        Choose a deck to edit (this demo is unauthenticated — any user can open any
-        deck).
-      </p>
+    <main className="container mx-auto py-8">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold">Precon League — Home</h1>
+        <p className="muted">Choose a deck to edit (this demo is unauthenticated — any user can open any deck).</p>
+      </header>
 
-      <section style={{ marginTop: 20 }}>
-        <h2>All decks</h2>
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium">All decks</h2>
+        </div>
         {loading && <p>Loading decks…</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p className="text-red-600">{error}</p>}
         {!loading && !error && (
-          <ul style={{ paddingLeft: 0, listStyle: 'none' }}>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {decks.length === 0 && <li>No decks found.</li>}
             {decks.map((d) => (
-              <li
-                key={d.deck_id}
-                style={{
-                  padding: 12,
-                  border: '1px solid #ddd',
-                  borderRadius: 6,
-                  marginBottom: 8,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <strong>{d.deck_name}</strong>
-                    <div style={{ fontSize: 12, color: '#555' }}>
-                      owner id: {d.user_id} • source: {d.source}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {d.moxfield_deck_url && (
-                      <a href={d.moxfield_deck_url} target="_blank" rel="noreferrer">
-                        View source
-                      </a>
-                    )}
-                    {d.archidekt_deck_url && (
-                      <a href={d.archidekt_deck_url} target="_blank" rel="noreferrer">
-                        View source
-                      </a>
-                    )}
-                    <Link to={`/decks/${d.deck_id}`}>
-                      <button>Edit</button>
-                    </Link>
-                  </div>
+              <li key={d.deck_id} className="card flex items-center justify-between">
+                <div>
+                  <div className="text-lg font-semibold">{d.deck_name}</div>
+                  <div className="muted">owner id: {d.user_id} • source: {d.source}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {d.moxfield_deck_url && (
+                    <a className="muted" href={d.moxfield_deck_url} target="_blank" rel="noreferrer">View source</a>
+                  )}
+                  {d.archidekt_deck_url && (
+                    <a className="muted" href={d.archidekt_deck_url} target="_blank" rel="noreferrer">View source</a>
+                  )}
+                  <Link to={`/decks/${d.deck_id}`} className="btn">Edit</Link>
                 </div>
               </li>
             ))}
@@ -129,36 +112,36 @@ export default function Home() {
         )}
       </section>
 
-      <section style={{ marginTop: 28 }}>
-        <h2>Create or register a deck</h2>
-        <p style={{ marginTop: 0 }}>
-          Provide an Archidekt or Moxfield deck URL and click Submit to register it
-          into the league.
-        </p>
-        <form onSubmit={handleCreate} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <label>
-            Source:{' '}
-            <select value={source} onChange={(e) => setSource(e.target.value as 'moxfield' | 'archidekt')}>
+      <section>
+        <h2 className="text-lg font-medium mb-2">Create or register a deck</h2>
+        <p className="muted">Provide an Archidekt or Moxfield deck URL and click Submit to register it into the league.</p>
+        <form onSubmit={handleCreate} className="mt-3 grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
+          <div className="md:col-span-1">
+            <label className="block text-sm">Source</label>
+            <select value={source} onChange={(e) => setSource(e.target.value as 'moxfield' | 'archidekt')} className="input">
               <option value="moxfield">Moxfield</option>
               <option value="archidekt">Archidekt</option>
             </select>
-          </label>
-          <label style={{ flex: 1 }}>
-            URL:{' '}
+          </div>
+          <div className="md:col-span-4">
+            <label className="block text-sm">URL</label>
             <input
               type="url"
               value={deckUrl}
               onChange={(e) => setDeckUrl(e.target.value)}
-              placeholder="https://moxfield.com/decks/..."
-              style={{ width: '100%' }}
+              placeholder="https://moxfield.com/decks..."
               required
+              className="input"
             />
-          </label>
-          <button type="submit" disabled={creating}>
-            {creating ? 'Creating…' : 'Submit'}
-          </button>
+          </div>
+          <div className="md:col-span-1">
+            <label className="block text-sm">&nbsp;</label>
+            <button type="submit" disabled={creating} className="btn w-full">
+              {creating ? 'Creating…' : 'Submit'}
+            </button>
+          </div>
         </form>
-        {createMessage && <p style={{ marginTop: 8 }}>{createMessage}</p>}
+        {createMessage && <p className="mt-2 muted">{createMessage}</p>}
       </section>
     </main>
   )
