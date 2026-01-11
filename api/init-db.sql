@@ -51,7 +51,8 @@ CREATE TABLE snapshots (
     combo_rating DECIMAL,
     archetype_minor TEXT,
     archetype_major TEXT,
-    price_usd DECIMAL
+    price_usd DECIMAL,
+    week_of_league INTEGER
 );
 
 CREATE TABLE library_cards (

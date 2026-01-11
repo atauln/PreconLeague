@@ -128,6 +128,7 @@ async def create_snapshot(
     archetype_major: Optional[str] = None,
     price_usd: Optional[float] = None,
     created_at: Optional[str] = None,
+    week_of_league: Optional[int] = None
 ) -> Optional[int]:
     """Create a new snapshot and return the snapshot_id"""
     if created_at:
@@ -147,7 +148,8 @@ async def create_snapshot(
             combo_rating,
             archetype_minor,
             archetype_major,
-            price_usd
+            price_usd,
+            week_of_league
         ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
         )
@@ -169,6 +171,7 @@ async def create_snapshot(
             archetype_minor,
             archetype_major,
             price_usd,
+            week_of_league
         )
     else:
         query = """
@@ -186,7 +189,8 @@ async def create_snapshot(
             combo_rating,
             archetype_minor,
             archetype_major,
-            price_usd
+            price_usd,
+            week_of_league
         ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
         )
@@ -207,6 +211,7 @@ async def create_snapshot(
             archetype_minor,
             archetype_major,
             price_usd,
+            week_of_league
         )
     result = await execute_update_returning(query, params)
     return result['snapshot_id'] if result else None
@@ -312,6 +317,11 @@ async def get_most_recent_snapshot_for_deck(deck_id: int) -> Optional[Dict[str, 
     """
     results = await execute_query(query, (deck_id,))
     return results[0] if results else None
+
+async def get_all_snapshots_for_week(week_of_league: int) -> List[Dict[str, Any]]:
+    """Retrieve all snapshots for a specific week of the league"""
+    query = "SELECT * FROM snapshots WHERE week_of_league = $1;"
+    return await execute_query(query, (week_of_league,))
 
 # Bulk retrieval functions
 async def get_all_users() -> List[Dict[str, Any]]:
