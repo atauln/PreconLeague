@@ -151,7 +151,7 @@ async def create_snapshot(
             price_usd,
             week_of_league
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
         )
         RETURNING snapshot_id;
         """
@@ -192,7 +192,7 @@ async def create_snapshot(
             price_usd,
             week_of_league
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
         )
         RETURNING snapshot_id;
         """
@@ -224,6 +224,57 @@ async def associate_card_with_snapshot(snapshot_id: int, card_id: str) -> bool:
     ON CONFLICT (snapshot_id, card_id) DO NOTHING;
     """
     return await execute_update(query, (snapshot_id, card_id))
+
+
+async def get_cards_by_ids(card_ids: List[str]) -> List[Dict[str, Any]]:
+    """Retrieve cards by a list of oracle_card_id values in a single query."""
+    if not card_ids:
+        return []
+    query = "SELECT * FROM cards WHERE oracle_card_id = ANY($1);"
+    return await execute_query(query, (card_ids,))
+
+
+async def create_cards_bulk(cards: List[tuple]) -> bool:
+    """Insert multiple cards using a single connection and executemany.
+    `cards` should be an iterable of tuples (oracle_card_id, card_name).
+    """
+    if not cards:
+        return True
+    conn = await get_connection()
+    if not conn:
+        return False
+    try:
+        await conn.executemany(
+            "INSERT INTO cards (oracle_card_id, card_name) VALUES ($1, $2) ON CONFLICT (oracle_card_id) DO NOTHING;",
+            cards,
+        )
+        return True
+    except asyncpg.PostgresError as e:
+        print(f"Bulk create cards error: {e}")
+        return False
+    finally:
+        await conn.close()
+
+
+async def associate_cards_with_snapshot_bulk(snapshot_id: int, card_ids: List[str]) -> bool:
+    """Associate multiple card_ids with a snapshot in a single executemany call."""
+    if not card_ids:
+        return True
+    conn = await get_connection()
+    if not conn:
+        return False
+    try:
+        params = [(snapshot_id, cid) for cid in card_ids]
+        await conn.executemany(
+            "INSERT INTO library_cards (snapshot_id, card_id) VALUES ($1, $2) ON CONFLICT (snapshot_id, card_id) DO NOTHING;",
+            params,
+        )
+        return True
+    except asyncpg.PostgresError as e:
+        print(f"Bulk associate cards with snapshot error: {e}")
+        return False
+    finally:
+        await conn.close()
 
 # Basic retrieval functions
 async def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:

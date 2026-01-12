@@ -3,6 +3,7 @@ from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_
 from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
 from db import get_card_by_id, create_card, get_most_recent_snapshot_for_deck
 from db import get_all_snapshots_for_week
+from db import get_cards_by_ids, create_cards_bulk, associate_cards_with_snapshot_bulk
 from funcs.archidekt import fetch_archidekt_deck
 from funcs.moxfield import fetch_moxfield_deck
 from funcs.commandersalt import fetch_commandersalt_deck_data
@@ -88,10 +89,12 @@ async def trigger_create_snapshot(deck_id: int):
     if not existing_commander:
         await create_card(commander.id, commander.name)
     
-    week_of_league = 0
     most_recent_snapshot = await get_most_recent_snapshot_for_deck(deck_id)
     if most_recent_snapshot:
-        week_of_league = most_recent_snapshot.get("week_of_league", 0) + 1
+        week_of_league = most_recent_snapshot.get("week_of_league", -1)
+    
+    if week_of_league is None or week_of_league < 0:
+        week_of_league = 0
 
     snapshot_id = await create_snapshot(
         deck_id=deck_id,
@@ -111,12 +114,19 @@ async def trigger_create_snapshot(deck_id: int):
         week_of_league=week_of_league
     )
 
-    for card in proc_deck.library:
-        # Ensure the card exists in the database
-        existing_card = await get_card_by_id(card.id)
-        if not existing_card:
-            await create_card(card.id, card.name)
-        await associate_card_with_snapshot(snapshot_id, card.id)
+    # Batch card handling: check which cards already exist, insert missing, then bulk-associate
+    card_ids = [card.id for card in proc_deck.library]
+    # Query existing cards in one go
+    existing_cards = await get_cards_by_ids(card_ids)
+    existing_ids = {c.get('oracle_card_id') for c in existing_cards}
+
+    # Prepare list of missing cards (oracle_card_id, card_name)
+    missing_cards = [ (card.id, card.name) for card in proc_deck.library if card.id not in existing_ids ]
+    if missing_cards:
+        await create_cards_bulk(missing_cards)
+
+    # Associate all library cards with the snapshot in bulk
+    await associate_cards_with_snapshot_bulk(snapshot_id, card_ids)
     
     if snapshot_id:
         return {"snapshot_id": snapshot_id, "deck_id": deck_id}
