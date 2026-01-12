@@ -1,5 +1,21 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link as RouterLink } from 'react-router-dom'
+import {
+  Container,
+  Typography,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  Table,
+  TableBody,
+  TableRow,
+  TableCell,
+  CircularProgress,
+  Alert,
+  Link as MuiLink,
+} from '@mui/material'
 
 interface Deck {
   deck_id: number
@@ -15,6 +31,19 @@ interface Snapshot {
   deck_id: number
   snapshot_name?: string | null
   created_at?: string
+  commander_id: number
+  overall_rating: number
+  power_level_rating: number
+  salt_rating: number
+  synergy_rating: number
+  threat_rating: number
+  bracket_rating: number
+  combo_rating: number
+  manabase_score: number
+  archetype_minor: string
+  archetype_major: string
+  price_usd: number
+  week_of_league: number
 }
 
 const remoteApi = (import.meta.env.VITE_API_URL as string) || ''
@@ -59,7 +88,7 @@ export default function DeckEditor() {
     if (isNaN(id)) return
     setCreating(true)
     try {
-  const res = await fetch(apiUrl(`/snapshots/create_snapshot/${id}`), { method: 'POST' })
+      const res = await fetch(apiUrl(`/snapshots/create_snapshot/${id}`), { method: 'POST' })
       if (!res.ok) {
         const text = await res.text()
         throw new Error(`Create snapshot failed: ${res.status} ${text}`)
@@ -72,59 +101,140 @@ export default function DeckEditor() {
     }
   }
 
+  function formatNumber(value?: number | null, maximumFractionDigits = 1) {
+    if (value === null || value === undefined || Number.isNaN(value as number)) return '—'
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits, minimumFractionDigits: 0 }).format(value as number)
+  }
+
+  function formatCurrency(value?: number | null) {
+    if (value === null || value === undefined || Number.isNaN(value as number)) return '—'
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value as number)
+  }
+
+  function formatDate(iso?: string | null) {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return iso
+    return d.toLocaleString()
+  }
+
   if (!deckId || isNaN(id)) {
     return (
-      <main className="container mx-auto py-8">
-        <p>Invalid deck id. <Link to="/" className="text-sky-600">Back</Link></p>
-      </main>
+      <Container sx={{ py: 4 }}>
+        <Typography variant="body1">Invalid deck id. <MuiLink component={RouterLink} to="/">Back</MuiLink></Typography>
+      </Container>
     )
   }
 
   return (
-    <main className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Deck editor</h1>
-        <Link to="/" className="muted">← Back to home</Link>
-      </div>
+    <Container sx={{ py: 4 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h5">Deck editor</Typography>
+        <MuiLink component={RouterLink} to="/">← Back to home</MuiLink>
+      </Box>
 
-      {loading && <p>Loading…</p>}
-      {error && <p className="text-red-600">{error}</p>}
-
-      {deck && (
-        <section className="card mb-4">
-          <h2 className="text-lg font-medium">{deck.deck_name}</h2>
-          <div className="muted">Owner id: {deck.user_id}</div>
-          <div className="muted">Source: {deck.source}</div>
-          <div className="mt-2">
-            {deck.moxfield_deck_url && (
-              <a className="muted mr-3" href={deck.moxfield_deck_url} target="_blank" rel="noreferrer">View Moxfield</a>
-            )}
-            {deck.archidekt_deck_url && (
-              <a className="muted" href={deck.archidekt_deck_url} target="_blank" rel="noreferrer">View Archidekt</a>
-            )}
-          </div>
-        </section>
+      {loading && (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
       )}
 
-      <section>
-        <h3 className="text-lg font-medium mb-2">Snapshots</h3>
-        <div className="mb-3">
-          <button onClick={handleCreateSnapshot} disabled={creating || loading} className="btn">
-            {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
-          </button>
-        </div>
-        {snapshots.length === 0 && <p>No snapshots yet.</p>}
-        <ul className="grid gap-3">
-          {snapshots.map((s) => (
-            <li key={s.snapshot_id} className="card">
-              <div>
-                <strong>{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</strong>
-              </div>
-              <div className="muted">{s.created_at}</div>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {deck && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6">{deck.deck_name}</Typography>
+            <Typography color="text.secondary">Owner id: {deck.user_id}</Typography>
+            <Typography color="text.secondary">Source: {deck.source}</Typography>
+            <Box mt={1}>
+              {deck.moxfield_deck_url && (
+                <MuiLink href={deck.moxfield_deck_url} target="_blank" rel="noreferrer" sx={{ mr: 2 }}>View Moxfield</MuiLink>
+              )}
+              {deck.archidekt_deck_url && (
+                <MuiLink href={deck.archidekt_deck_url} target="_blank" rel="noreferrer">View Archidekt</MuiLink>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      <Box mb={2} display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6">Snapshots</Typography>
+        <Button variant="contained" onClick={handleCreateSnapshot} disabled={creating || loading}>
+          {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
+        </Button>
+      </Box>
+
+      {snapshots.length === 0 && !loading && <Typography>No snapshots yet.</Typography>}
+
+      <Grid container spacing={2}>
+        {snapshots.map((s) => (
+          <Grid key={s.snapshot_id} item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                  <Typography variant="subtitle1">{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</Typography>
+                  <Typography color="text.secondary">{formatDate(s.created_at)}</Typography>
+                </Box>
+
+                <Table size="small" sx={{ mt: 1 }}>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander ID</TableCell>
+                      <TableCell>{s.commander_id}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
+                      <TableCell>{formatNumber(s.overall_rating, 1)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Power Level</TableCell>
+                      <TableCell>{formatNumber(s.power_level_rating, 2)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Salt Rating</TableCell>
+                      <TableCell>{formatNumber(s.salt_rating, 1)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Synergy</TableCell>
+                      <TableCell>{formatNumber(s.synergy_rating, 1)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Threat</TableCell>
+                      <TableCell>{formatNumber(s.threat_rating, 1)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
+                      <TableCell>{formatNumber(s.bracket_rating, 2)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Combo</TableCell>
+                      <TableCell>{formatNumber(s.combo_rating, 1)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
+                      <TableCell>{formatNumber(s.manabase_score, 0)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
+                      <TableCell>{s.archetype_major} - {s.archetype_minor}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
+                      <TableCell>{formatCurrency(s.price_usd)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
+                      <TableCell>{s.week_of_league}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
   )
 }
