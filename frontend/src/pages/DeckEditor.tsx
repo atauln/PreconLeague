@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, Link as RouterLink } from 'react-router-dom'
 import {
   Container,
@@ -12,6 +12,10 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   CircularProgress,
   Alert,
   Link as MuiLink,
@@ -31,7 +35,7 @@ interface Snapshot {
   deck_id: number
   snapshot_name?: string | null
   created_at?: string
-  commander_id: number
+  commander_id: string
   overall_rating: number
   power_level_rating: number
   salt_rating: number
@@ -57,6 +61,10 @@ export default function DeckEditor() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [cardNames, setCardNames] = useState<Record<string, string>>({})
+  const cardFetchInFlight = useRef<Set<string>>(new Set())
 
   const fetchData = useCallback(async function () {
     if (isNaN(id)) return
@@ -79,6 +87,50 @@ export default function DeckEditor() {
       setLoading(false)
     }
   }, [id])
+
+  function fetchCardName(cardId: string): string {
+    if (!cardId) return ''
+    const cached = cardNames[cardId]
+    if (cached) return cached
+
+    // If already fetching this id, return fallback and wait for update
+    if (!cardFetchInFlight.current.has(cardId)) {
+      cardFetchInFlight.current.add(cardId)
+      fetch(`https://api.scryfall.com/cards/${cardId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Card fetch failed: ${res.status}`)
+          return res.json()
+        })
+        .then((data) => {
+          const name = (data && data.name) ? data.name : cardId
+          setCardNames((prev) => ({ ...prev, [cardId]: name }))
+        })
+        .catch(() => {
+          // Cache fallback to avoid repeated failing requests
+          setCardNames((prev) => ({ ...prev, [cardId]: cardId }))
+        })
+        .finally(() => {
+          cardFetchInFlight.current.delete(cardId)
+        })
+    }
+
+    return cardId
+  }
+
+  function fetchMostRecentSnapshot(): Snapshot | null {
+    fetch(apiUrl(`/snapshots/decks/most_recent_snapshot/${id}`))
+      .then((res) => {
+        if (!res.ok) throw new Error(`Most recent snapshot fetch failed: ${res.status}`)
+        return res.json()
+      })
+      .then((data) => {
+        return data as Snapshot
+      })
+      .catch(() => {
+        return null
+      })
+    return null
+  }
 
   useEffect(() => {
     void fetchData()
@@ -118,6 +170,16 @@ export default function DeckEditor() {
     return d.toLocaleString()
   }
 
+  function openDetails(s: Snapshot) {
+    setSelectedSnapshot(s)
+    setModalOpen(true)
+  }
+
+  function closeDetails() {
+    setModalOpen(false)
+    setSelectedSnapshot(null)
+  }
+
   if (!deckId || isNaN(id)) {
     return (
       <Container sx={{ py: 4 }}>
@@ -145,6 +207,9 @@ export default function DeckEditor() {
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Typography variant="h6">{deck.deck_name}</Typography>
+            {snapshots.length > 0 && snapshots[0]?.commander_id && (
+              <Typography variant="body1">{fetchCardName(snapshots[0].commander_id)}</Typography>
+            )}
             <Typography color="text.secondary">Owner id: {deck.user_id}</Typography>
             <Typography color="text.secondary">Source: {deck.source}</Typography>
             <Box mt={1}>
@@ -178,63 +243,83 @@ export default function DeckEditor() {
                   <Typography color="text.secondary">{formatDate(s.created_at)}</Typography>
                 </Box>
 
-                <Table size="small" sx={{ mt: 1 }}>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander ID</TableCell>
-                      <TableCell>{s.commander_id}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
-                      <TableCell>{formatNumber(s.overall_rating, 1)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Power Level</TableCell>
-                      <TableCell>{formatNumber(s.power_level_rating, 2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Salt Rating</TableCell>
-                      <TableCell>{formatNumber(s.salt_rating, 1)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Synergy</TableCell>
-                      <TableCell>{formatNumber(s.synergy_rating, 1)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Threat</TableCell>
-                      <TableCell>{formatNumber(s.threat_rating, 1)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
-                      <TableCell>{formatNumber(s.bracket_rating, 2)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Combo</TableCell>
-                      <TableCell>{formatNumber(s.combo_rating, 1)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
-                      <TableCell>{formatNumber(s.manabase_score, 0)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
-                      <TableCell>{s.archetype_major} - {s.archetype_minor}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
-                      <TableCell>{formatCurrency(s.price_usd)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
-                      <TableCell>{s.week_of_league}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
+                  <Box style={{ paddingRight: '1rem' }}>
+                    <Typography variant="body2">Commander: {fetchCardName(s.commander_id)}</Typography>
+                    <Typography variant="body2">Power Level: {formatNumber(s.power_level_rating, 3)}</Typography>
+                  </Box>
+                  <Box>
+                    <Button variant="outlined" size="small" onClick={() => openDetails(s)} sx={{ mr: 1 }}>Details</Button>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      <Dialog open={modalOpen} onClose={closeDetails} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedSnapshot ? selectedSnapshot.snapshot_name || `Snapshot ${selectedSnapshot.snapshot_id}` : 'Snapshot Details'}</DialogTitle>
+        <DialogContent dividers>
+          {selectedSnapshot && (
+            <Table size="small">
+              <TableBody>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander</TableCell>
+                  <TableCell>{fetchCardName(selectedSnapshot.commander_id)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.overall_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Power Level</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.power_level_rating, 2)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Salt Rating</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.salt_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Synergy</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.synergy_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Threat</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.threat_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.bracket_rating, 2)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Combo</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.combo_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.manabase_score, 0)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
+                  <TableCell>{selectedSnapshot.archetype_major} - {selectedSnapshot.archetype_minor}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
+                  <TableCell>{formatCurrency(selectedSnapshot.price_usd)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
+                  <TableCell>{selectedSnapshot.week_of_league}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDetails}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }
