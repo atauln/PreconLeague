@@ -170,7 +170,7 @@ export default function DeckEditor() {
 
       <Grid container spacing={2}>
         {snapshots.map((s) => (
-          <Grid key={s.snapshot_id} item xs={12} md={6}>
+          <Grid key={s.snapshot_id}>
             <Card>
               <CardContent>
                 <Box display="flex" justifyContent="space-between" alignItems="flex-start">

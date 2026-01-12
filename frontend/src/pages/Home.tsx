@@ -109,10 +109,10 @@ export default function Home() {
       {!loading && !error && (
         <Grid container spacing={0} sx={{ mb: 4 }}>
           {decks.length === 0 && (
-            <Grid item xs={12}><Typography>No decks found.</Typography></Grid>
+            <Grid><Typography>No decks found.</Typography></Grid>
           )}
           {decks.map((d) => (
-            <Grid item xs={12} sx={{ mb: 2 }} key={d.deck_id} style={{ width: '100%' }}>
+            <Grid sx={{ mb: 2 }} key={d.deck_id} style={{ width: '100%' }}>
               <Card >
                 <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
