@@ -89,12 +89,10 @@ async def trigger_create_snapshot(deck_id: int):
     if not existing_commander:
         await create_card(commander.id, commander.name)
     
+    week_of_league = 0
     most_recent_snapshot = await get_most_recent_snapshot_for_deck(deck_id)
     if most_recent_snapshot:
-        week_of_league = most_recent_snapshot.get("week_of_league", -1)
-    
-    if week_of_league is None or week_of_league < 0:
-        week_of_league = 0
+        week_of_league = most_recent_snapshot.get("week_of_league", -1) + 1
 
     snapshot_id = await create_snapshot(
         deck_id=deck_id,
