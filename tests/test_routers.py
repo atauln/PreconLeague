@@ -631,13 +631,15 @@ class TestSnapshotsRouterAdditional:
         )
         
         with patch('routers.snapshots.get_deck_by_id', return_value=mock_deck), \
-             patch('routers.snapshots.fetch_moxfield_deck', return_value=mock_proc_deck), \
-             patch('routers.snapshots.fetch_commandersalt_deck_data', return_value=mock_cs_data), \
-             patch('routers.snapshots.get_card_by_id', return_value=None), \
-             patch('routers.snapshots.create_card', return_value=True), \
-             patch('routers.snapshots.get_most_recent_snapshot_for_deck', return_value=None), \
-             patch('routers.snapshots.create_snapshot', return_value=100), \
-             patch('routers.snapshots.associate_card_with_snapshot', return_value=True):
+            patch('routers.snapshots.fetch_moxfield_deck', return_value=mock_proc_deck), \
+            patch('routers.snapshots.fetch_commandersalt_deck_data', return_value=mock_cs_data), \
+            patch('routers.snapshots.get_card_by_id', return_value=None), \
+            patch('routers.snapshots.create_card', return_value=True), \
+            patch('routers.snapshots.get_most_recent_snapshot_for_deck', return_value=None), \
+            patch('routers.snapshots.create_snapshot', return_value=100), \
+            patch('routers.snapshots.get_cards_by_ids', return_value=[]), \
+            patch('routers.snapshots.create_cards_bulk', return_value=True), \
+            patch('routers.snapshots.associate_cards_with_snapshot_bulk', return_value=True):
             
             result = await snapshots.trigger_create_snapshot(1)
             
