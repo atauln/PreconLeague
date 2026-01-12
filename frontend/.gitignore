@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.next
+out
+build/
 
 # Editor directories and files
 .vscode/*
