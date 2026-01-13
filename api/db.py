@@ -416,6 +416,12 @@ async def get_deck_snapshots(deck_id: int) -> List[Dict[str, Any]]:
     query = "SELECT * FROM snapshots WHERE deck_id = $1;"
     return await execute_query(query, (deck_id,))
 
+# update functions can be added as needed
+async def update_snapshot_week(snapshot_id: int, week_of_league: int) -> bool:
+    """Update the week_of_league for a specific snapshot"""
+    query = "UPDATE snapshots SET week_of_league = $1 WHERE snapshot_id = $2;"
+    return await execute_update(query, (week_of_league, snapshot_id))
+
 async def initialize_database():
     """Initialize the database connection using the file init-db.sql"""
     conn = await get_connection()

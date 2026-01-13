@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   Grid,
+  TextField,
   Table,
   TableBody,
   TableRow,
@@ -65,6 +66,9 @@ export default function DeckEditor() {
   const [modalOpen, setModalOpen] = useState(false)
   const [cardNames, setCardNames] = useState<Record<string, string>>({})
   const cardFetchInFlight = useRef<Set<string>>(new Set())
+  const [weekEdits, setWeekEdits] = useState<Record<number, number>>({})
+  const [updatingWeek, setUpdatingWeek] = useState<Record<number, boolean>>({})
+  const [modalEditingWeek, setModalEditingWeek] = useState(false)
 
   const fetchData = useCallback(async function () {
     if (isNaN(id)) return
@@ -157,12 +161,47 @@ export default function DeckEditor() {
 
   function openDetails(s: Snapshot) {
     setSelectedSnapshot(s)
+    setWeekEdits((prev) => ({ ...prev, [s.snapshot_id]: s.week_of_league }))
+    setModalEditingWeek(false)
     setModalOpen(true)
   }
 
   function closeDetails() {
     setModalOpen(false)
     setSelectedSnapshot(null)
+  }
+
+  async function handleUpdateWeek(snapshotId: number) {
+    const newWeek = weekEdits[snapshotId]
+    if (newWeek === undefined || newWeek === null || Number.isNaN(newWeek) || newWeek < 0) {
+      setError('Please enter a valid week number')
+      return
+    }
+    setUpdatingWeek((prev) => ({ ...prev, [snapshotId]: true }))
+    setError(null)
+    try {
+      const res = await fetch(apiUrl(`/snapshots/${snapshotId}/week/${newWeek}`), { method: 'PUT' })
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`Update week failed: ${res.status} ${text}`)
+      }
+      await fetchData()
+      // Refresh the selected snapshot with latest data from the API
+      try {
+        const single = await fetch(apiUrl(`/snapshots/${snapshotId}`))
+        if (single.ok) {
+          const updated = await single.json()
+          setSelectedSnapshot(updated)
+        }
+      } catch (_) {
+        // ignore
+      }
+      setModalEditingWeek(false)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setUpdatingWeek((prev) => ({ ...prev, [snapshotId]: false }))
+    }
   }
 
   if (!deckId || isNaN(id)) {
@@ -295,7 +334,42 @@ export default function DeckEditor() {
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
-                  <TableCell>{selectedSnapshot.week_of_league}</TableCell>
+                  <TableCell>
+                    {!modalEditingWeek ? (
+                      <Box display="flex" alignItems="center">
+                        <Typography sx={{ mr: 1 }}>{selectedSnapshot.week_of_league}</Typography>
+                        <Button size="small" onClick={() => setModalEditingWeek(true)}>EDIT</Button>
+                      </Box>
+                    ) : (
+                      <Box display="flex" alignItems="center">
+                        <TextField
+                          type="number"
+                          size="small"
+                          inputProps={{ min: 0 }}
+                          sx={{ width: 100, mr: 1 }}
+                          value={weekEdits[selectedSnapshot.snapshot_id] ?? selectedSnapshot.week_of_league}
+                          onChange={(e) => setWeekEdits((prev) => ({ ...prev, [selectedSnapshot.snapshot_id]: Number(e.target.value) }))}
+                        />
+                        <Button
+                          size="small"
+                          onClick={() => void handleUpdateWeek(selectedSnapshot.snapshot_id)}
+                          disabled={!!updatingWeek[selectedSnapshot.snapshot_id]}
+                        >
+                          {updatingWeek[selectedSnapshot.snapshot_id] ? 'Updating…' : 'Update'}
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            setModalEditingWeek(false)
+                            setWeekEdits((prev) => ({ ...prev, [selectedSnapshot.snapshot_id]: selectedSnapshot.week_of_league }))
+                          }}
+                          sx={{ ml: 1 }}
+                        >
+                          Cancel
+                        </Button>
+                      </Box>
+                    )}
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
