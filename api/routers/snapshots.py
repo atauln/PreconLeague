@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_snapshots
 from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
-from db import get_card_by_id, create_card, get_most_recent_snapshot_for_deck
+from db import get_card_by_id, create_card
 from db import get_all_snapshots_for_week
 from db import get_cards_by_ids, create_cards_bulk, associate_cards_with_snapshot_bulk
 from funcs.archidekt import fetch_archidekt_deck
@@ -9,6 +9,10 @@ from funcs.moxfield import fetch_moxfield_deck
 from funcs.commandersalt import fetch_commandersalt_deck_data
 from typing import Any, Dict
 from funcs.models import SnapshotCreateRequest, SnapshotCreateResponse
+from datetime import datetime
+
+STARTING_DATE_FOR_LEAGUE = datetime(2026, 1, 12)  # Example starting date
+CURRENT_WEEK_NUMBER = (datetime.now() - STARTING_DATE_FOR_LEAGUE).days // 7 + 1
 
 router = APIRouter(
     prefix="/snapshots",
@@ -88,11 +92,6 @@ async def trigger_create_snapshot(deck_id: int):
     existing_commander = await get_card_by_id(commander.id)
     if not existing_commander:
         await create_card(commander.id, commander.name)
-    
-    week_of_league = 0
-    most_recent_snapshot = await get_most_recent_snapshot_for_deck(deck_id)
-    if most_recent_snapshot:
-        week_of_league = most_recent_snapshot.get("week_of_league", -1) + 1
 
     snapshot_id = await create_snapshot(
         deck_id=deck_id,
@@ -109,7 +108,7 @@ async def trigger_create_snapshot(deck_id: int):
         archetype_minor=commandersalt_data.archetype_minor,
         archetype_major=commandersalt_data.archetype_major,
         price_usd=commandersalt_data.price_usd,
-        week_of_league=week_of_league
+        week_of_league=CURRENT_WEEK_NUMBER
     )
 
     # Batch card handling: check which cards already exist, insert missing, then bulk-associate
@@ -136,3 +135,4 @@ async def read_snapshots_for_week(week_of_league: int):
     if snapshots:
         return snapshots
     raise HTTPException(status_code=404, detail="No snapshots found for this week")
+

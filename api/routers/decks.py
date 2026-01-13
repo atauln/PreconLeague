@@ -4,10 +4,10 @@ from db import (
     get_all_decks,
     create_deck,
     get_user_decks,
-    get_user_by_id,
     get_user_by_name,
     create_user,
-    get_most_recent_snapshot_for_deck
+    get_most_recent_snapshot_for_deck,
+    get_most_recent_snapshot_for_deck_and_week
 )
 from db import find_deck_by_moxfield_url, find_deck_by_archidekt_url
 from funcs.moxfield import fetch_moxfield_deck
@@ -87,3 +87,10 @@ async def read_most_recent_snapshot(deck_id: int):
     if snapshot:
         return snapshot
     raise HTTPException(status_code=404, detail="No snapshots found for this deck")
+
+@router.get("/most_recent_snapshot/{deck_id}/week/{week_of_league}")
+async def read_most_recent_snapshot_for_week(deck_id: int, week_of_league: int):
+    snapshot = await get_most_recent_snapshot_for_deck_and_week(deck_id, week_of_league)
+    if snapshot:
+        return snapshot
+    raise HTTPException(status_code=404, detail="No snapshots found for this deck and week")

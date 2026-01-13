@@ -369,6 +369,17 @@ async def get_most_recent_snapshot_for_deck(deck_id: int) -> Optional[Dict[str, 
     results = await execute_query(query, (deck_id,))
     return results[0] if results else None
 
+async def get_most_recent_snapshot_for_deck_and_week(deck_id: int, week_of_league: int) -> Optional[Dict[str, Any]]:
+    """Retrieve the most recent snapshot for a specific deck and week of the league"""
+    query = """
+    SELECT * FROM snapshots 
+    WHERE deck_id = $1 AND week_of_league = $2
+    ORDER BY created_at DESC 
+    LIMIT 1;
+    """
+    results = await execute_query(query, (deck_id, week_of_league))
+    return results[0] if results else None
+
 async def get_all_snapshots_for_week(week_of_league: int) -> List[Dict[str, Any]]:
     """Retrieve all snapshots for a specific week of the league"""
     query = "SELECT * FROM snapshots WHERE week_of_league = $1;"
