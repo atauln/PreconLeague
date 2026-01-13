@@ -13,7 +13,7 @@ ENV VITE_API_URL=$VITE_API_URL
 
 # Install dependencies (use package-lock or yarn.lock if present)
 COPY package.json package-lock.json* yarn.lock* ./
-RUN npm ci --silent --prefer-offline
+RUN if [ -f package-lock.json ]; then npm ci --prefer-offline; else npm install; fi
 
 # Copy source and build
 COPY . .
