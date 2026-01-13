@@ -25,6 +25,7 @@ import {
 interface Deck {
   deck_id: number
   user_id: number
+  user_name?: string
   moxfield_deck_url?: string | null
   archidekt_deck_url?: string | null
   source: string
@@ -234,7 +235,7 @@ export default function DeckEditor() {
             {snapshots.length > 0 && snapshots[0]?.commander_id && (
               <Typography variant="body1">{fetchCardName(snapshots[0].commander_id)}</Typography>
             )}
-            <Typography color="text.secondary">Owner id: {deck.user_id}</Typography>
+            <Typography color="text.secondary">Owner: {deck.user_name ?? deck.user_id}</Typography>
             <Typography color="text.secondary">Source: {deck.source}</Typography>
             <Box mt={1}>
               {deck.moxfield_deck_url && (

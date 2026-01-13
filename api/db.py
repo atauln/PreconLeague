@@ -298,7 +298,12 @@ async def get_card_by_id(card_id: str) -> Optional[Dict[str, Any]]:
 
 async def get_deck_by_id(deck_id: int) -> Optional[Dict[str, Any]]:
     """Retrieve a deck by deck_id"""
-    query = "SELECT * FROM decks WHERE deck_id = $1;"
+    query = """
+    SELECT d.*, u.user_name
+    FROM decks d
+    JOIN users u ON d.user_id = u.user_id
+    WHERE d.deck_id = $1;
+    """
     results = await execute_query(query, (deck_id,))
     return results[0] if results else None
 
@@ -343,7 +348,12 @@ async def get_snapshot_with_library(snapshot_id: int) -> Optional[Dict[str, Any]
 
 async def get_user_decks(user_id: int) -> List[Dict[str, Any]]:
     """Retrieve all decks for a specific user"""
-    query = "SELECT * FROM decks WHERE user_id = $1;"
+    query = """
+    SELECT d.*, u.user_name
+    FROM decks d
+    JOIN users u ON d.user_id = u.user_id
+    WHERE d.user_id = $1;
+    """
     return await execute_query(query, (user_id,))
 
 async def find_deck_by_moxfield_url(moxfield_deck_url: str) -> Optional[Dict[str, Any]]:
@@ -398,7 +408,11 @@ async def get_all_cards() -> List[Dict[str, Any]]:
 
 async def get_all_decks() -> List[Dict[str, Any]]:
     """Retrieve all decks"""
-    query = "SELECT * FROM decks;"
+    query = """
+    SELECT d.*, u.user_name
+    FROM decks d
+    JOIN users u ON d.user_id = u.user_id;
+    """
     return await execute_query(query)
 
 async def get_all_snapshots() -> List[Dict[str, Any]]:

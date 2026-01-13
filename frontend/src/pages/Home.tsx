@@ -21,6 +21,7 @@ import {
 interface Deck {
   deck_id: number
   user_id: number
+  user_name?: string
   moxfield_deck_url?: string | null
   archidekt_deck_url?: string | null
   source: string
@@ -131,7 +132,7 @@ export default function Home() {
                 <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="subtitle1" noWrap>{d.deck_name}</Typography>
-                    <Typography color="text.secondary">owner id: {d.user_id} • source: {d.source}</Typography>
+                    <Typography color="text.secondary">Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                     {d.moxfield_deck_url && (
