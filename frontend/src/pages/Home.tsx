@@ -26,13 +26,21 @@ interface Deck {
   source: string
   deck_name: string
 }
-// Build API URL correctly for both local proxied development and remote API.
-// - If VITE_API_URL is set (e.g. https://preconleague-api.cs.house) we'll call
-//   `${VITE_API_URL}/decks/...` (no extra /api prefix). Otherwise we use the
-//   local dev-server proxy path `/api/decks/...` which forwards to your local
-//   backend (see vite.config.ts).
+// Build API URL from Vite env var. We do NOT rely on Vite's dev proxy `/api`.
+// Set `VITE_API_URL` at build time (or via build-arg) to the full API origin
+// (e.g. `https://preconleague-api.cs.house`). If it's missing we'll fall back
+// to `/api` but log a warning so this is explicit.
 const remoteApi = (import.meta.env.VITE_API_URL as string) || ''
-const apiUrl = (path: string) => (remoteApi ? `${remoteApi}${path}` : `/api${path}`)
+const apiUrl = (path: string) => {
+  if (!remoteApi) {
+    // Keep fallback for development convenience, but warn loudly.
+    console.warn('[PreconLeague] VITE_API_URL is not set — falling back to /api (ensure you set VITE_API_URL at build time)')
+    return `/api${path}`
+  }
+  // Ensure the remoteApi does not have a trailing slash
+  const origin = remoteApi.endsWith('/') ? remoteApi.slice(0, -1) : remoteApi
+  return `${origin}${path}`
+}
 
 export default function Home() {
   const [decks, setDecks] = useState<Deck[]>([])

@@ -9,14 +9,22 @@ COPY . .
 RUN npm run build
 
 # Production image: nginx serves built assets
+# Production image: nginx serves built assets
 FROM nginx:stable-alpine
+
+# Expose non-privileged port for OpenShift/OKD
 EXPOSE 8080
+
+# Provide a runtime-configurable API backend via env var API_BACKEND.
+# Default to the public API origin but you can override at runtime or in the build.
+ENV API_BACKEND="https://preconleague-api.cs.house"
 
 # Copy built artifacts into the container webroot
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy our nginx config which maps /PreconLeague/ to the built files
-COPY default.conf /etc/nginx/conf.d/default.conf
+# Copy nginx template. The official nginx image runs envsubst on templates
+# in /etc/nginx/templates/ so ${API_BACKEND} will be substituted at container start.
+COPY default.conf.template /etc/nginx/templates/default.conf.template
 
 # Ensure runtime directories are writable by an arbitrary UID (OpenShift/OKD)
 RUN mkdir -p /var/cache/nginx/client_temp \
