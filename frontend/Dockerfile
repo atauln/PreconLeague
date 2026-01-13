@@ -19,17 +19,23 @@ RUN if [ -f package-lock.json ]; then npm ci --prefer-offline; else npm install;
 COPY . .
 RUN npm run build
 
-# Production stage: nginx to serve the built static files
-FROM nginx:1.26-alpine
+# Production stage: Use the unprivileged alpine image
+# This image runs as a non-root user and listens on port 8080 by default
+FROM nginxinc/nginx-unprivileged:alpine3.22-perl
 
-# Remove default nginx static assets
+# Switch to root temporarily to remove default files (if necessary)
+USER root
 RUN rm -rf /usr/share/nginx/html/*
+# Switch back to the non-root user provided by the image
+USER nginx
 
 # Copy built app from the build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config for SPA routing
+# Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# EXPOSE 8080 (Standard for unprivileged Nginx)
+EXPOSE 8080
+
 CMD ["nginx", "-g", "daemon off;"]
