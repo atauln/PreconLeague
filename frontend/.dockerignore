@@ -1,0 +1,31 @@
+# Node artifacts
+node_modules
+
+# Vite build output
+dist
+
+# Local env / editor configs
+.env
+.env.*
+.vscode/
+.idea/
+
+# Git
+.git
+.gitignore
+
+# Lockfiles (optional to include/exclude depending on build strategy)
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# OS files
+.DS_Store
+
+# Coverage / test artifacts
+coverage
+htmlcov
+
+# Misc
+*.log

@@ -117,21 +117,6 @@ export default function DeckEditor() {
     return cardId
   }
 
-  function fetchMostRecentSnapshot(): Snapshot | null {
-    fetch(apiUrl(`/snapshots/decks/most_recent_snapshot/${id}`))
-      .then((res) => {
-        if (!res.ok) throw new Error(`Most recent snapshot fetch failed: ${res.status}`)
-        return res.json()
-      })
-      .then((data) => {
-        return data as Snapshot
-      })
-      .catch(() => {
-        return null
-      })
-    return null
-  }
-
   useEffect(() => {
     void fetchData()
   }, [fetchData])
