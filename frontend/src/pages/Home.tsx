@@ -39,7 +39,7 @@ const apiUrl = (path: string) => {
   }
   // Ensure the remoteApi does not have a trailing slash
   const origin = remoteApi.endsWith('/') ? remoteApi.slice(0, -1) : remoteApi
-  return `${origin}${path}`
+  return `${origin}/api${path}`
 }
 
 export default function Home() {

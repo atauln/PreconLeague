@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    base: '/PreconLeague/',
+    base: '/',
     server: {
       port: 5173,
       proxy: {
@@ -25,7 +25,6 @@ export default defineConfig(({ mode }) => {
           target,
           changeOrigin: true,
           secure,
-          rewrite: (path) => path.replace(/^\/api/, ''),
         },
       },
     },

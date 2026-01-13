@@ -1,38 +1,35 @@
-FROM node:18-alpine AS builder
+# Multi-stage Dockerfile for Vite + React + TypeScript frontend
+# Build stage
+FROM node:18-alpine AS build
 WORKDIR /app
-ARG VITE_API_URL=""
-# Ensure build-time Vite env is available to the bundler so import.meta.env.VITE_API_URL is inlined
+ENV PATH /app/node_modules/.bin:$PATH
+
+# Allow passing Vite env vars at build time. Use build-args to set these.
+ARG VITE_USE_LOCAL
+ARG VITE_API_URL
+# Ensure the env vars are available to the build step (Vite reads import.meta.env at build time)
+ENV VITE_USE_LOCAL=$VITE_USE_LOCAL
 ENV VITE_API_URL=$VITE_API_URL
-COPY package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci --silent; else npm install --silent; fi
+
+# Install dependencies (use package-lock or yarn.lock if present)
+COPY package.json package-lock.json* yarn.lock* ./
+RUN npm ci --silent --prefer-offline
+
+# Copy source and build
 COPY . .
 RUN npm run build
 
-# Production image: nginx serves built assets
-# Production image: nginx serves built assets
-FROM nginx:stable-alpine
+# Production stage: nginx to serve the built static files
+FROM nginx:1.26-alpine
 
-# Expose non-privileged port for OpenShift/OKD
-EXPOSE 8080
+# Remove default nginx static assets
+RUN rm -rf /usr/share/nginx/html/*
 
-# Provide a runtime-configurable API backend via env var API_BACKEND.
-# Default to the public API origin but you can override at runtime or in the build.
-ENV API_BACKEND="https://preconleague-api.cs.house"
+# Copy built app from the build stage
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy built artifacts into the container webroot
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy custom nginx config for SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy nginx template. The official nginx image runs envsubst on templates
-# in /etc/nginx/templates/ so ${API_BACKEND} will be substituted at container start.
-COPY default.conf.template /etc/nginx/templates/default.conf.template
-
-# Ensure runtime directories are writable by an arbitrary UID (OpenShift/OKD)
-RUN mkdir -p /var/cache/nginx/client_temp \
- && mkdir -p /var/run \
- && mkdir -p /var/log/nginx \
- && chmod -R 0777 /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-	CMD ["/bin/sh", "-c", "wget -qO- --spider http://localhost:8080/PreconLeague/ || exit 1"]
-
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

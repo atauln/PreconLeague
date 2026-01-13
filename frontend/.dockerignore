@@ -1,31 +1,39 @@
-# Node artifacts
+# Node modules
 node_modules
 
-# Vite build output
+# Build output
 dist
 
-# Local env / editor configs
+# Local env files
 .env
-.env.*
-.vscode/
-.idea/
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.vscode
+.idea
+.DS_Store
+
+# OS files
+Thumbs.db
+
+# Coverage and temp
+coverage
+tmp
+
+# Vite cache
+.vite
 
 # Git
 .git
 .gitignore
 
-# Lockfiles (optional to include/exclude depending on build strategy)
-npm-debug.log
-yarn-error.log
-package-lock.json
-yarn.lock
+# Docker files (optional)
+.dockerignore
 
-# OS files
-.DS_Store
-
-# Coverage / test artifacts
-coverage
-htmlcov
-
-# Misc
-*.log
+# Frontend specific
+.sass-cache

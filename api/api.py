@@ -18,12 +18,12 @@ app = FastAPI(
     servers=_build_servers_from_env() or None,
 )
 
-app.include_router(users.router)
-app.include_router(decks.router)
-app.include_router(snapshots.router)
-app.include_router(cards.router)
+app.include_router(users.router, prefix="/api")
+app.include_router(decks.router, prefix="/api")
+app.include_router(snapshots.router, prefix="/api")
+app.include_router(cards.router, prefix="/api")
 
-@app.get("/")
+@app.get("/api")
 async def read_root():
     return {"message": "Welcome to the Precon League API! Author: @atauln on Github"}
 
