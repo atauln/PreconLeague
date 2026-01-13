@@ -1,5 +1,25 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useParams, Link as RouterLink } from 'react-router-dom'
+import {
+  Container,
+  Typography,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Grid,
+  Table,
+  TableBody,
+  TableRow,
+  TableCell,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+  Alert,
+  Link as MuiLink,
+} from '@mui/material'
 
 interface Deck {
   deck_id: number
@@ -15,6 +35,19 @@ interface Snapshot {
   deck_id: number
   snapshot_name?: string | null
   created_at?: string
+  commander_id: string
+  overall_rating: number
+  power_level_rating: number
+  salt_rating: number
+  synergy_rating: number
+  threat_rating: number
+  bracket_rating: number
+  combo_rating: number
+  manabase_score: number
+  archetype_minor: string
+  archetype_major: string
+  price_usd: number
+  week_of_league: number
 }
 
 const remoteApi = (import.meta.env.VITE_API_URL as string) || ''
@@ -28,6 +61,10 @@ export default function DeckEditor() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [cardNames, setCardNames] = useState<Record<string, string>>({})
+  const cardFetchInFlight = useRef<Set<string>>(new Set())
 
   const fetchData = useCallback(async function () {
     if (isNaN(id)) return
@@ -51,6 +88,50 @@ export default function DeckEditor() {
     }
   }, [id])
 
+  function fetchCardName(cardId: string): string {
+    if (!cardId) return ''
+    const cached = cardNames[cardId]
+    if (cached) return cached
+
+    // If already fetching this id, return fallback and wait for update
+    if (!cardFetchInFlight.current.has(cardId)) {
+      cardFetchInFlight.current.add(cardId)
+      fetch(`https://api.scryfall.com/cards/${cardId}`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Card fetch failed: ${res.status}`)
+          return res.json()
+        })
+        .then((data) => {
+          const name = (data && data.name) ? data.name : cardId
+          setCardNames((prev) => ({ ...prev, [cardId]: name }))
+        })
+        .catch(() => {
+          // Cache fallback to avoid repeated failing requests
+          setCardNames((prev) => ({ ...prev, [cardId]: cardId }))
+        })
+        .finally(() => {
+          cardFetchInFlight.current.delete(cardId)
+        })
+    }
+
+    return cardId
+  }
+
+  function fetchMostRecentSnapshot(): Snapshot | null {
+    fetch(apiUrl(`/snapshots/decks/most_recent_snapshot/${id}`))
+      .then((res) => {
+        if (!res.ok) throw new Error(`Most recent snapshot fetch failed: ${res.status}`)
+        return res.json()
+      })
+      .then((data) => {
+        return data as Snapshot
+      })
+      .catch(() => {
+        return null
+      })
+    return null
+  }
+
   useEffect(() => {
     void fetchData()
   }, [fetchData])
@@ -59,7 +140,7 @@ export default function DeckEditor() {
     if (isNaN(id)) return
     setCreating(true)
     try {
-  const res = await fetch(apiUrl(`/snapshots/create_snapshot/${id}`), { method: 'POST' })
+      const res = await fetch(apiUrl(`/snapshots/create_snapshot/${id}`), { method: 'POST' })
       if (!res.ok) {
         const text = await res.text()
         throw new Error(`Create snapshot failed: ${res.status} ${text}`)
@@ -72,59 +153,173 @@ export default function DeckEditor() {
     }
   }
 
+  function formatNumber(value?: number | null, maximumFractionDigits = 1) {
+    if (value === null || value === undefined || Number.isNaN(value as number)) return '—'
+    return new Intl.NumberFormat('en-US', { maximumFractionDigits, minimumFractionDigits: 0 }).format(value as number)
+  }
+
+  function formatCurrency(value?: number | null) {
+    if (value === null || value === undefined || Number.isNaN(value as number)) return '—'
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value as number)
+  }
+
+  function formatDate(iso?: string | null) {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return iso
+    return d.toLocaleString()
+  }
+
+  function openDetails(s: Snapshot) {
+    setSelectedSnapshot(s)
+    setModalOpen(true)
+  }
+
+  function closeDetails() {
+    setModalOpen(false)
+    setSelectedSnapshot(null)
+  }
+
   if (!deckId || isNaN(id)) {
     return (
-      <main className="container mx-auto py-8">
-        <p>Invalid deck id. <Link to="/" className="text-sky-600">Back</Link></p>
-      </main>
+      <Container sx={{ py: 4 }}>
+        <Typography variant="body1">Invalid deck id. <MuiLink component={RouterLink} to="/">Back</MuiLink></Typography>
+      </Container>
     )
   }
 
   return (
-    <main className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Deck editor</h1>
-        <Link to="/" className="muted">← Back to home</Link>
-      </div>
+    <Container sx={{ py: 4 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h5">Deck editor</Typography>
+        <MuiLink component={RouterLink} to="/">← Back to home</MuiLink>
+      </Box>
 
-      {loading && <p>Loading…</p>}
-      {error && <p className="text-red-600">{error}</p>}
-
-      {deck && (
-        <section className="card mb-4">
-          <h2 className="text-lg font-medium">{deck.deck_name}</h2>
-          <div className="muted">Owner id: {deck.user_id}</div>
-          <div className="muted">Source: {deck.source}</div>
-          <div className="mt-2">
-            {deck.moxfield_deck_url && (
-              <a className="muted mr-3" href={deck.moxfield_deck_url} target="_blank" rel="noreferrer">View Moxfield</a>
-            )}
-            {deck.archidekt_deck_url && (
-              <a className="muted" href={deck.archidekt_deck_url} target="_blank" rel="noreferrer">View Archidekt</a>
-            )}
-          </div>
-        </section>
+      {loading && (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
       )}
 
-      <section>
-        <h3 className="text-lg font-medium mb-2">Snapshots</h3>
-        <div className="mb-3">
-          <button onClick={handleCreateSnapshot} disabled={creating || loading} className="btn">
-            {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
-          </button>
-        </div>
-        {snapshots.length === 0 && <p>No snapshots yet.</p>}
-        <ul className="grid gap-3">
-          {snapshots.map((s) => (
-            <li key={s.snapshot_id} className="card">
-              <div>
-                <strong>{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</strong>
-              </div>
-              <div className="muted">{s.created_at}</div>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {deck && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="h6">{deck.deck_name}</Typography>
+            {snapshots.length > 0 && snapshots[0]?.commander_id && (
+              <Typography variant="body1">{fetchCardName(snapshots[0].commander_id)}</Typography>
+            )}
+            <Typography color="text.secondary">Owner id: {deck.user_id}</Typography>
+            <Typography color="text.secondary">Source: {deck.source}</Typography>
+            <Box mt={1}>
+              {deck.moxfield_deck_url && (
+                <MuiLink href={deck.moxfield_deck_url} target="_blank" rel="noreferrer" sx={{ mr: 2 }}>View Moxfield</MuiLink>
+              )}
+              {deck.archidekt_deck_url && (
+                <MuiLink href={deck.archidekt_deck_url} target="_blank" rel="noreferrer">View Archidekt</MuiLink>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      <Box mb={2} display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6">Snapshots</Typography>
+        <Button variant="contained" onClick={handleCreateSnapshot} disabled={creating || loading}>
+          {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
+        </Button>
+      </Box>
+
+      {snapshots.length === 0 && !loading && <Typography>No snapshots yet.</Typography>}
+
+      <Grid container spacing={2}>
+        {snapshots.map((s) => (
+          <Grid key={s.snapshot_id}>
+            <Card>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                  <Typography variant="subtitle1">{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</Typography>
+                  <Typography color="text.secondary">{formatDate(s.created_at)}</Typography>
+                </Box>
+
+                <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
+                  <Box style={{ paddingRight: '1rem' }}>
+                    <Typography variant="body2">Commander: {fetchCardName(s.commander_id)}</Typography>
+                    <Typography variant="body2">Power Level: {formatNumber(s.power_level_rating, 3)}</Typography>
+                  </Box>
+                  <Box>
+                    <Button variant="outlined" size="small" onClick={() => openDetails(s)} sx={{ mr: 1 }}>Details</Button>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Dialog open={modalOpen} onClose={closeDetails} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedSnapshot ? selectedSnapshot.snapshot_name || `Snapshot ${selectedSnapshot.snapshot_id}` : 'Snapshot Details'}</DialogTitle>
+        <DialogContent dividers>
+          {selectedSnapshot && (
+            <Table size="small">
+              <TableBody>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander</TableCell>
+                  <TableCell>{fetchCardName(selectedSnapshot.commander_id)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.overall_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Power Level</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.power_level_rating, 2)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Salt Rating</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.salt_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Synergy</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.synergy_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Threat</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.threat_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.bracket_rating, 2)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Combo</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.combo_rating, 1)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
+                  <TableCell>{formatNumber(selectedSnapshot.manabase_score, 0)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
+                  <TableCell>{selectedSnapshot.archetype_major} - {selectedSnapshot.archetype_minor}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
+                  <TableCell>{formatCurrency(selectedSnapshot.price_usd)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
+                  <TableCell>{selectedSnapshot.week_of_league}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDetails}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Container>
   )
 }

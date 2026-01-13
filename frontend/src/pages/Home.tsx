@@ -1,5 +1,22 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link as RouterLink } from 'react-router-dom'
+import {
+  Container,
+  Typography,
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Alert,
+  Link as MuiLink,
+} from '@mui/material'
 
 interface Deck {
   deck_id: number
@@ -76,73 +93,85 @@ export default function Home() {
   }
 
   return (
-    <main className="container mx-auto py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold">Precon League — Home</h1>
-        <p className="muted">Choose a deck to edit (this demo is unauthenticated — any user can open any deck).</p>
-      </header>
+    <Container maxWidth={false} sx={{ py: 4, px: 2 }}>
+      <Box mb={3}>
+        <Typography variant="h5">Precon League — Home</Typography>
+        <Typography color="text.secondary">Choose a deck to edit (this demo is unauthenticated — any user can open any deck).</Typography>
+      </Box>
 
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">All decks</h2>
-        </div>
-        {loading && <p>Loading decks…</p>}
-        {error && <p className="text-red-600">{error}</p>}
-        {!loading && !error && (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {decks.length === 0 && <li>No decks found.</li>}
-            {decks.map((d) => (
-              <li key={d.deck_id} className="card flex items-center justify-between">
-                <div>
-                  <div className="text-lg font-semibold">{d.deck_name}</div>
-                  <div className="muted">owner id: {d.user_id} • source: {d.source}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {d.moxfield_deck_url && (
-                    <a className="muted" href={d.moxfield_deck_url} target="_blank" rel="noreferrer">View source</a>
-                  )}
-                  {d.archidekt_deck_url && (
-                    <a className="muted" href={d.archidekt_deck_url} target="_blank" rel="noreferrer">View source</a>
-                  )}
-                  <Link to={`/decks/${d.deck_id}`} className="btn">Edit</Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
+        <Typography variant="h6">All decks</Typography>
+      </Box>
 
-      <section>
-        <h2 className="text-lg font-medium mb-2">Create or register a deck</h2>
-        <p className="muted">Provide an Archidekt or Moxfield deck URL and click Submit to register it into the league.</p>
-        <form onSubmit={handleCreate} className="mt-3 grid grid-cols-1 md:grid-cols-6 gap-3 items-center">
-          <div className="md:col-span-1">
-            <label className="block text-sm">Source</label>
-            <select value={source} onChange={(e) => setSource(e.target.value as 'moxfield' | 'archidekt')} className="input">
-              <option value="moxfield">Moxfield</option>
-              <option value="archidekt">Archidekt</option>
-            </select>
-          </div>
-          <div className="md:col-span-4">
-            <label className="block text-sm">URL</label>
-            <input
+      {loading && <Box my={2}><CircularProgress /></Box>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {!loading && !error && (
+        <Grid container spacing={0} sx={{ mb: 4 }}>
+          {decks.length === 0 && (
+            <Grid><Typography>No decks found.</Typography></Grid>
+          )}
+          {decks.map((d) => (
+            <Grid sx={{ mb: 2 }} key={d.deck_id} style={{ width: '100%' }}>
+              <Card >
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle1" noWrap>{d.deck_name}</Typography>
+                    <Typography color="text.secondary">owner id: {d.user_id} • source: {d.source}</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                    {d.moxfield_deck_url && (
+                      <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer">View source</MuiLink>
+                    )}
+                    {d.archidekt_deck_url && (
+                      <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer">View source</MuiLink>
+                    )}
+                    <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined">Edit</Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      <Box>
+        <Typography variant="h6" sx={{ mb: 1 }}>Create or register a deck</Typography>
+        <Typography color="text.secondary" sx={{ mb: 2 }}>Provide an Archidekt or Moxfield deck URL and click Submit to register it into the league.</Typography>
+
+        <Box component="form" onSubmit={handleCreate} sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel id="source-label">Source</InputLabel>
+              <Select
+                labelId="source-label"
+                value={source}
+                label="Source"
+                onChange={(e) => setSource(e.target.value as 'moxfield' | 'archidekt')}
+              >
+                <MenuItem value="moxfield">Moxfield</MenuItem>
+                <MenuItem value="archidekt">Archidekt</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
               type="url"
               value={deckUrl}
               onChange={(e) => setDeckUrl(e.target.value)}
               placeholder="https://moxfield.com/decks..."
               required
-              className="input"
+              label="URL"
+              sx={{ flex: 1, minWidth: 240 }}
             />
-          </div>
-          <div className="md:col-span-1">
-            <label className="block text-sm">&nbsp;</label>
-            <button type="submit" disabled={creating} className="btn w-full">
+
+            <Button type="submit" variant="contained" disabled={creating} sx={{ whiteSpace: 'nowrap' }}>
               {creating ? 'Creating…' : 'Submit'}
-            </button>
-          </div>
-        </form>
-        {createMessage && <p className="mt-2 muted">{createMessage}</p>}
-      </section>
-    </main>
+            </Button>
+          </Box>
+        </Box>
+
+        {createMessage && <Typography sx={{ mt: 2 }}>{createMessage}</Typography>}
+      </Box>
+    </Container>
   )
 }
