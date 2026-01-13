@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_snapshots
+from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_snapshots, get_most_recent_snapshot_for_deck
 from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
 from db import get_card_by_id, create_card
 from db import get_all_snapshots_for_week
@@ -136,3 +136,19 @@ async def read_snapshots_for_week(week_of_league: int):
         return snapshots
     raise HTTPException(status_code=404, detail="No snapshots found for this week")
 
+@router.get("/week/{week_of_league}/most_recent")
+async def read_most_recent_snapshots_for_week(week_of_league: int):
+    snapshots = []
+    deck_ids = []
+    snapshots_all = await get_all_snapshots_for_week(week_of_league)
+    for snapshot in snapshots_all:
+        deck_id = snapshot.get("deck_id")
+        if deck_id not in deck_ids:
+            deck_ids.append(deck_id)
+    for deck_id in deck_ids:
+        snapshot = await get_most_recent_snapshot_for_deck(deck_id, week_of_league)
+        if snapshot:
+            snapshots.append(snapshot)
+    if snapshots:
+        return snapshots
+    raise HTTPException(status_code=404, detail="No snapshots found for this week")
