@@ -31,9 +31,19 @@ EXPOSE 80
 # copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Ensure runtime directories are writable by an arbitrary UID (OpenShift/OKD)
+# OpenShift runs containers with a random non-root UID. Create the
+# nginx runtime/cache directories at build time and make them world-writable
+# so the container process can create temp files there.
+RUN mkdir -p /var/cache/nginx/client_temp \
+ && mkdir -p /var/run \
+ && mkdir -p /var/log/nginx \
+ && chmod -R 0777 /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html
+
 # recommended: disable nginx default logs to reduce image noise
 # (optional) set a lightweight healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/bin/sh", "-c", "wget -qO- --spider http://localhost/ || exit 1"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+	CMD ["/bin/sh", "-c", "wget -qO- --spider http://localhost/ || exit 1"]
 
 # default command
 CMD ["nginx", "-g", "daemon off;"]
