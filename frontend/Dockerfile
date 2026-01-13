@@ -25,11 +25,14 @@ RUN npm run build
 # 2) Production image (nginx serves built assets)
 FROM nginx:stable-alpine
 
-# expose port 80
-EXPOSE 80
+# expose port 8080 (non-privileged, safe for OpenShift/OKD arbitrary UID)
+EXPOSE 8080
 
 # copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# copy a custom nginx config that listens on 8080 (non-privileged port)
+COPY default.conf /etc/nginx/conf.d/default.conf
 
 # Ensure runtime directories are writable by an arbitrary UID (OpenShift/OKD)
 # OpenShift runs containers with a random non-root UID. Create the
@@ -43,7 +46,7 @@ RUN mkdir -p /var/cache/nginx/client_temp \
 # recommended: disable nginx default logs to reduce image noise
 # (optional) set a lightweight healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-	CMD ["/bin/sh", "-c", "wget -qO- --spider http://localhost/ || exit 1"]
+	CMD ["/bin/sh", "-c", "wget -qO- --spider http://localhost:8080/ || exit 1"]
 
 # default command
 CMD ["nginx", "-g", "daemon off;"]
