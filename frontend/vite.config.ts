@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   // - Or set VITE_USE_LOCAL=true to proxy to local http://localhost:8000
   const apiUrlFromEnv = env.VITE_API_URL?.trim()
   const useLocal = (env.VITE_USE_LOCAL || '').toLowerCase() === 'true'
-  const defaultProd = 'https://preconleague.cs.house'
+  const defaultProd = 'https://preconleague-api.cs.house'
   const target = apiUrlFromEnv || (useLocal ? 'http://localhost:8000' : defaultProd)
   const secure = target.startsWith('https')
 

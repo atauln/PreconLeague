@@ -27,7 +27,7 @@ interface Deck {
   deck_name: string
 }
 // Build API URL correctly for both local proxied development and remote API.
-// - If VITE_API_URL is set (e.g. https://preconleague.cs.house) we'll call
+// - If VITE_API_URL is set (e.g. https://preconleague-api.cs.house) we'll call
 //   `${VITE_API_URL}/decks/...` (no extra /api prefix). Otherwise we use the
 //   local dev-server proxy path `/api/decks/...` which forwards to your local
 //   backend (see vite.config.ts).
@@ -46,6 +46,12 @@ export default function Home() {
 
   useEffect(() => {
     fetchDecks()
+    // Log runtime API info to help debugging in environments where build-time envs are used
+    const viteApi = (import.meta.env.VITE_API_URL as string) || ''
+    const useLocal = ((import.meta.env.VITE_USE_LOCAL as string) || '').toLowerCase() === 'true'
+    const defaultProd = 'https://preconleague-api.cs.house'
+    const target = viteApi || (useLocal ? 'http://localhost:8000' : defaultProd)
+    console.info('[PreconLeague] Home startup API target=', target)
   }, [])
 
   async function fetchDecks() {
