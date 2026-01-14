@@ -19,6 +19,9 @@ router = APIRouter(
     tags=["snapshots"],
 )
 
+def __sort_snapshots_by_date(snapshots: list) -> list:
+    return sorted(snapshots, key=lambda x: x.get("created_at"), reverse=True)
+
 @router.get("/{snapshot_id}")
 async def read_snapshot(snapshot_id: int):
     snapshot = await get_snapshot_by_id(snapshot_id)
@@ -30,14 +33,14 @@ async def read_snapshot(snapshot_id: int):
 async def read_all_snapshots():
     snapshots = await get_all_snapshots()
     if snapshots:
-        return snapshots
+        return __sort_snapshots_by_date(snapshots)
     raise HTTPException(status_code=404, detail="No snapshots found")
 
 @router.get("/deck/{deck_id}")
 async def read_deck_snapshots(deck_id: int):
     snapshots = await get_deck_snapshots(deck_id)
     if snapshots:
-        return snapshots
+        return __sort_snapshots_by_date(snapshots)
     raise HTTPException(status_code=404, detail="No snapshots found for this deck")
 
 @router.post("/", response_model=SnapshotCreateResponse)
@@ -133,7 +136,7 @@ async def trigger_create_snapshot(deck_id: int):
 async def read_snapshots_for_week(week_of_league: int):
     snapshots = await get_all_snapshots_for_week(week_of_league)
     if snapshots:
-        return snapshots
+        return __sort_snapshots_by_date(snapshots)
     raise HTTPException(status_code=404, detail="No snapshots found for this week")
 
 @router.get("/week/{week_of_league}/most_recent")
@@ -150,7 +153,7 @@ async def read_most_recent_snapshots_for_week(week_of_league: int):
         if snapshot:
             snapshots.append(snapshot)
     if snapshots:
-        return snapshots
+        return __sort_snapshots_by_date(snapshots)
     raise HTTPException(status_code=404, detail="No snapshots found for this week")
 
 #update week of snapshot for manual corrections
