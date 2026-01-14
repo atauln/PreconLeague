@@ -16,7 +16,29 @@ import {
   CircularProgress,
   Alert,
   Link as MuiLink,
+  Avatar,
+  CardMedia
 } from '@mui/material'
+
+interface Snapshot {
+  snapshot_id: number
+  deck_id: number
+  commander_id: string | null
+  created_at: string
+  salt_rating: number
+  synergy_rating: number
+  power_level_rating: number
+  threat_rating: number
+  bracket_rating: number
+  overall_rating: number
+  manabase_score: number
+  power_level_display_value: number
+  combo_rating: number
+  archetype_minor: string | null
+  archetype_major: string | null
+  price_usd: number | null
+  week_of_league: number | null
+}
 
 interface Deck {
   deck_id: number
@@ -26,6 +48,8 @@ interface Deck {
   archidekt_deck_url?: string | null
   source: string
   deck_name: string
+  most_recent_snapshot: Snapshot | null
+  colors: string[]
 }
 // Build API URL from Vite env var. We do NOT rely on Vite's dev proxy `/api`.
 // Set `VITE_API_URL` at build time (or via build-arg) to the full API origin
@@ -67,17 +91,56 @@ export default function Home() {
     setLoading(true)
     setError(null)
     try {
-  const res = await fetch(apiUrl('/decks/'))
+      const res = await fetch(apiUrl('/decks/'))
       if (!res.ok) {
         throw new Error(`Failed to fetch decks: ${res.status} ${res.statusText}`)
       }
       const data = await res.json()
-      setDecks(data || [])
+      if (!Array.isArray(data)) {
+        setDecks([])
+      }
+      // For each deck, fetch its most recent snapshot
+      for (const deck of data) {
+        try {
+          const snapshot = await fetchMostRecentSnapshot(deck.deck_id)
+          deck.most_recent_snapshot = snapshot
+          // set the deck's colors based on the most recent snapshot's commander_id
+          if (snapshot && snapshot.commander_id) {
+            const cardData = await fetchCardData(snapshot.commander_id)
+            deck.colors = cardData.color_identity || []
+          } else {
+            deck.colors = []
+          }
+        } catch (err) {
+          // If fetching the snapshot fails, just log and continue
+          console.warn(`Failed to fetch most recent snapshot for deck ${deck.deck_id}:`, err)
+          deck.most_recent_snapshot = null
+        }
+      }
+      setDecks(data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
+  }
+
+  async function fetchCardData(cardId: string) {
+    const res = await fetch('https://api.scryfall.com/cards/' + cardId)
+    if (!res.ok) {
+      throw new Error(`Failed to fetch card data: ${res.status} ${res.statusText}`)
+    }
+    const data = await res.json()
+    return data
+  }
+
+  async function fetchMostRecentSnapshot(deckId: number) {
+    const res = await fetch(apiUrl(`/decks/most_recent_snapshot/${deckId}`))
+    if (!res.ok) {
+      throw new Error(`Failed to fetch most recent snapshot: ${res.status} ${res.statusText}`)
+    }
+    const data = await res.json()
+    return data
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -107,6 +170,7 @@ export default function Home() {
     }
   }
 
+
   return (
     <Container maxWidth={false} sx={{ py: 4, px: 2 }}>
       <Box mb={3}>
@@ -130,6 +194,33 @@ export default function Home() {
             <Grid sx={{ mb: 2 }} key={d.deck_id} style={{ width: '100%' }}>
               <Card >
                 <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                  <Box sx={{ minWidth: 25}}>
+                    {d.colors.map((color) => (
+                      <Avatar
+                        key={color}
+                        src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
+                        alt={`${color} mana`}
+                        variant="square"
+                        sx={{ width: 20, height: 20, bgcolor: 'transparent' }}
+                      />
+                    ))}
+                  </Box>
+                  {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (
+                    <MuiLink
+                      component={RouterLink}
+                      to={`/decks/${d.deck_id}`}
+                      sx={{ display: 'block', textDecoration: 'none' }}
+                    >
+                      <CardMedia
+                        component="img"
+                        image={`https://cards.scryfall.io/art_crop/front/${d.most_recent_snapshot.commander_id.charAt(0)}/${d.most_recent_snapshot.commander_id.charAt(1)}/${d.most_recent_snapshot.commander_id}.jpg`}
+                        alt={`${d.deck_name} commander art`}
+                        sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
+                        loading="lazy"
+                        onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
+                      />
+                    </MuiLink>
+                  )}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="subtitle1" noWrap>{d.deck_name}</Typography>
                     <Typography color="text.secondary">Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
