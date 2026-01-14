@@ -180,6 +180,7 @@ export default function Home() {
 
       <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h6">All decks</Typography>
+        <Button component={RouterLink} to="/leaderboards" variant="contained">Leaderboards</Button>
       </Box>
 
       {loading && <Box my={2}><CircularProgress /></Box>}
