@@ -20,7 +20,10 @@ router = APIRouter(
 )
 
 def __sort_snapshots_by_date(snapshots: list) -> list:
-    return sorted(snapshots, key=lambda x: x.get("created_at"), reverse=True)
+    # Some snapshots returned by tests or db mocks may not have `created_at` set.
+    # Use empty-string fallback so keys are comparable (strings) and sorting won't
+    # raise TypeError when values are None.
+    return sorted(snapshots, key=lambda x: x.get("created_at") or "", reverse=True)
 
 @router.get("/{snapshot_id}")
 async def read_snapshot(snapshot_id: int):
