@@ -9,6 +9,7 @@ import {
   CardContent,
   Grid,
   TextField,
+  MenuItem,
   Table,
   TableBody,
   TableRow,
@@ -74,6 +75,7 @@ export default function DeckEditor() {
   const [weekEdits, setWeekEdits] = useState<Record<number, number>>({})
   const [updatingWeek, setUpdatingWeek] = useState<Record<number, boolean>>({})
   const [modalEditingWeek, setModalEditingWeek] = useState(false)
+  const [compareWeek, setCompareWeek] = useState<number | null>(null)
 
   const fetchData = useCallback(async function () {
     if (isNaN(id)) return
@@ -164,10 +166,71 @@ export default function DeckEditor() {
     return d.toLocaleString()
   }
 
+  function renderStatWithPrevDiff(
+    snap: Snapshot,
+    statKey: keyof Snapshot,
+    formatter: (v?: number | null) => string,
+    options?: { percent?: boolean; maximumFractionDigits?: number; compareWeek?: number | null }
+  ) {
+    const val = snap[statKey] as unknown as number | null
+    const formatted = formatter(val)
+
+    // Determine which week to compare to: either explicit compareWeek or previous week
+    const targetWeek =
+      options && options.compareWeek !== undefined && options.compareWeek !== null
+        ? options.compareWeek
+        : snap.week_of_league && snap.week_of_league > 0
+        ? snap.week_of_league - 1
+        : undefined
+
+    if (targetWeek === undefined || targetWeek === null || targetWeek < 0) return <>{formatted}</>
+
+    const prevWeekSnapshots = snapshots.filter((s) => s.week_of_league === targetWeek)
+    if (prevWeekSnapshots.length === 0) return <>{formatted}</>
+
+    const prevSnapshot = prevWeekSnapshots.sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())[0]
+    const prevVal = prevSnapshot[statKey] as unknown as number | null
+
+    if (
+      prevVal === null ||
+      prevVal === undefined ||
+      Number.isNaN(prevVal as number) ||
+      val === null ||
+      val === undefined ||
+      Number.isNaN(val as number)
+    )
+      return <>{formatted}</>
+
+    const diff = (val as number) - (prevVal as number)
+    if (diff === 0) return <>{formatted}</>
+
+    const diffFormatted = formatter(diff)
+
+    let percentStr: string | null = null
+    if (options?.percent && prevVal !== 0) {
+      const percent = (diff / (prevVal as number)) * 100
+      const pctFormatter = new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: options?.maximumFractionDigits ?? 1,
+        minimumFractionDigits: 0,
+      })
+      percentStr = `${pctFormatter.format(Math.abs(percent))}%`
+    }
+
+    return (
+      <>
+        {formatted}
+        <Typography component="span" sx={{ ml: 1, color: diff > 0 ? 'success.main' : 'error.main', fontSize: '0.875rem' }}>
+          ({diff > 0 ? '+' : ''}{diffFormatted}{percentStr ? ` / ${percentStr}` : ''})
+        </Typography>
+      </>
+    )
+  }
+
   function openDetails(s: Snapshot) {
     setSelectedSnapshot(s)
     setWeekEdits((prev) => ({ ...prev, [s.snapshot_id]: s.week_of_league }))
     setModalEditingWeek(false)
+    setCompareWeek(null)
     setModalOpen(true)
   }
 
@@ -313,7 +376,36 @@ export default function DeckEditor() {
       </Box>
 
       <Dialog open={modalOpen} onClose={closeDetails} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedSnapshot ? selectedSnapshot.snapshot_name || `Snapshot ${selectedSnapshot.snapshot_id}` : 'Snapshot Details'}</DialogTitle>
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box>
+              {selectedSnapshot ? selectedSnapshot.snapshot_name || `Snapshot ${selectedSnapshot.snapshot_id}` : 'Snapshot Details'}
+            </Box>
+            <Box>
+              <TextField
+                size="small"
+                select
+                label="Compare Week"
+                value={compareWeek === null ? 'auto' : compareWeek}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === 'auto') setCompareWeek(null)
+                  else setCompareWeek(Number(val))
+                }}
+                sx={{ minWidth: 160 }}
+              >
+                <MenuItem value="auto">Auto (previous week)</MenuItem>
+                {Array.from(new Set(snapshots.map((s) => s.week_of_league).filter((w) => w !== undefined && w !== null && w >= 0)))
+                  .sort((a: number, b: number) => (b as number) - (a as number))
+                  .map((wk) => (
+                    <MenuItem key={wk} value={wk as number}>
+                      {`Week ${wk}`}
+                    </MenuItem>
+                  ))}
+              </TextField>
+            </Box>
+          </Box>
+        </DialogTitle>
         <DialogContent dividers>
           {selectedSnapshot && (
             <Table size="small">
@@ -324,35 +416,35 @@ export default function DeckEditor() {
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.overall_rating, 1)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'overall_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Power Level</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.power_level_rating, 2)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'power_level_rating', (v) => formatNumber(v, 2), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Salt Rating</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.salt_rating, 1)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'salt_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Synergy</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.synergy_rating, 1)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'synergy_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Threat</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.threat_rating, 1)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'threat_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.bracket_rating, 2)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'bracket_rating', (v) => formatNumber(v, 2), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Combo</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.combo_rating, 1)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'combo_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
-                  <TableCell>{formatNumber(selectedSnapshot.manabase_score, 0)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'manabase_score', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
@@ -360,7 +452,7 @@ export default function DeckEditor() {
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
-                  <TableCell>{formatCurrency(selectedSnapshot.price_usd)}</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'price_usd', (v) => formatCurrency(v), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
