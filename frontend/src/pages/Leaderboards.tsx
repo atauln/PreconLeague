@@ -13,6 +13,7 @@ import {
   TableCell,
   TableBody,
   Paper,
+  Link as MuiLink,
   FormControl,
   InputLabel,
   Select,
@@ -207,7 +208,15 @@ export default function Leaderboards() {
               {leaderboard.map((row, idx) => (
                 <TableRow key={row.snapshot_id}>
                   <TableCell>{idx + 1}</TableCell>
-                  <TableCell>{row.deck_name ?? `Deck ${row.deck_id}`}</TableCell>
+                  <TableCell>
+                    {row.deck_id ? (
+                      <MuiLink component={RouterLink} to={`/decks/${row.deck_id}`} underline="hover">
+                        {row.deck_name ?? `Deck ${row.deck_id}`}
+                      </MuiLink>
+                    ) : (
+                      row.deck_name ?? `Deck ${row.deck_id}`
+                    )}
+                  </TableCell>
                   <TableCell>{row.user_name ?? row.user_id ?? '—'}</TableCell>
                   <TableCell align="right">{formatValue(row[selectedMetric], selectedMetric)}</TableCell>
                   <TableCell align="right">{formatValue(row.overall_rating, 'overall_rating')}</TableCell>
