@@ -284,7 +284,7 @@ export default function DeckEditor() {
               <AccordionDetails>
                 <Grid container spacing={2}>
                   {groups[wk].map((s) => (
-                    <Grid item xs={12} sm={6} md={4} key={s.snapshot_id}>
+                    <Grid key={s.snapshot_id}>
                       <Card>
                         <CardContent>
                           <Box display="flex" justifyContent="space-between" alignItems="flex-start">
