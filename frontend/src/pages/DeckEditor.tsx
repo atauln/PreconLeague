@@ -23,6 +23,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Tooltip,
   Link as MuiLink,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -225,6 +226,70 @@ export default function DeckEditor() {
       </>
     )
   }
+
+  async function getChangedCards(newSnapId: number, oldSnapId: number): Promise<{ added: string[]; removed: string[] }> {
+    // returns an object { added_cards: string[], removed_cards: string[] }
+    try {
+      const res = await fetch(apiUrl(`/snapshots/${newSnapId}/changes/${oldSnapId}`))
+      if (!res.ok) throw new Error(`Fetch changed cards failed: ${res.status}`)
+      const data = await res.json()
+      return {
+        added: Array.isArray(data.added_cards) ? data.added_cards : [],
+        removed: Array.isArray(data.removed_cards) ? data.removed_cards : [],
+      }
+    } catch {
+      return { added: [], removed: [] }
+    }
+  }
+
+  const [changedCards, setChangedCards] = useState<{ added: string[]; removed: string[] } | null>(null)
+  const [changedCardsLoading, setChangedCardsLoading] = useState(false)
+
+  useEffect(() => {
+    // load changed cards whenever modal opens, selectedSnapshot changes, or compareWeek changes
+    if (!selectedSnapshot) {
+      setChangedCards(null)
+      return
+    }
+
+    const targetWeek = compareWeek !== null && compareWeek !== undefined
+      ? compareWeek
+      : selectedSnapshot.week_of_league && selectedSnapshot.week_of_league > 0
+      ? selectedSnapshot.week_of_league - 1
+      : undefined
+
+    if (targetWeek === undefined || targetWeek === null) {
+      setChangedCards(null)
+      return
+    }
+
+    const prevWeekSnapshots = snapshots.filter((s) => s.week_of_league === targetWeek)
+    if (prevWeekSnapshots.length === 0) {
+      setChangedCards(null)
+      return
+    }
+
+    const prevSnapshot = prevWeekSnapshots.sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())[0]
+    if (!prevSnapshot) {
+      setChangedCards(null)
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      setChangedCardsLoading(true)
+      try {
+        const res = await getChangedCards(selectedSnapshot.snapshot_id, prevSnapshot.snapshot_id)
+        if (!cancelled) setChangedCards(res)
+      } catch {
+        if (!cancelled) setChangedCards({ added: [], removed: [] })
+      } finally {
+        if (!cancelled) setChangedCardsLoading(false)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [selectedSnapshot, compareWeek, snapshots])
 
   function openDetails(s: Snapshot) {
     setSelectedSnapshot(s)
@@ -496,6 +561,94 @@ export default function DeckEditor() {
               </TableBody>
             </Table>
           )}
+          {/* Changed cards section */}
+          <Box mt={2}>
+            <Typography variant="subtitle1">Library changes</Typography>
+            <Box mt={1}>
+              {changedCardsLoading ? (
+                <Box display="flex" justifyContent="center"><CircularProgress size={20} /></Box>
+              ) : changedCards ? (
+                <Grid container spacing={2}>
+                  <Grid>
+                    <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
+                    {changedCards.added.length === 0 ? (
+                      <Typography color="text.secondary">None</Typography>
+                    ) : (
+                      <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                        {changedCards.added.map((cardId) => (
+                          <Tooltip
+                            key={`added-${cardId}`}
+                            title={
+                              <Box>
+                                <Box
+                                  component="img"
+                                  src={`https://cards.scryfall.io/normal/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
+                                  alt={cardId}
+                                  sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                  loading="lazy"
+                                />
+                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{fetchCardName(cardId)}</Typography>
+                              </Box>
+                            }
+                            placement="top"
+                            arrow
+                          >
+                            <Box
+                              component="img"
+                              src={`https://cards.scryfall.io/art_crop/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
+                              alt={cardId}
+                              sx={{ height: 80, width: 'auto', borderRadius: 1 }}
+                              loading="lazy"
+                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                            />
+                          </Tooltip>
+                        ))}
+                      </Box>
+                    )}
+                  </Grid>
+                  <Grid>
+                    <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
+                    {changedCards.removed.length === 0 ? (
+                      <Typography color="text.secondary">None</Typography>
+                    ) : (
+                      <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                        {changedCards.removed.map((cardId) => (
+                          <Tooltip
+                            key={`removed-${cardId}`}
+                            title={
+                              <Box>
+                                <Box
+                                  component="img"
+                                  src={`https://cards.scryfall.io/normal/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
+                                  alt={cardId}
+                                  sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                  loading="lazy"
+                                />
+                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{fetchCardName(cardId)}</Typography>
+                              </Box>
+                            }
+                            placement="top"
+                            arrow
+                          >
+                            <Box
+                              component="img"
+                              src={`https://cards.scryfall.io/art_crop/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
+                              alt={cardId}
+                              sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                              loading="lazy"
+                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                            />
+                          </Tooltip>
+                        ))}
+                      </Box>
+                    )}
+                  </Grid>
+                </Grid>
+              ) : (
+                <Typography color="text.secondary">No comparison snapshot available</Typography>
+              )}
+            </Box>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDetails}>Close</Button>

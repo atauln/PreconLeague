@@ -166,3 +166,27 @@ async def upd_snapshot_week(snapshot_id: int, new_week_of_league: int):
     if success:
         return {"message": "Snapshot week updated successfully"}
     raise HTTPException(status_code=500, detail="Failed to update snapshot week")
+
+@router.get("/{snapshot_id}/changes/{old_snapshot_id}")
+async def read_snapshot_changes(snapshot_id: int, old_snapshot_id: int):
+    new_snapshot = await get_snapshot_with_library(snapshot_id)
+    old_snapshot = await get_snapshot_with_library(old_snapshot_id)
+
+    if not new_snapshot or not old_snapshot:
+        raise HTTPException(status_code=404, detail="One or both snapshots not found")
+    if new_snapshot.get("deck_id") != old_snapshot.get("deck_id"):
+        raise HTTPException(status_code=400, detail="Snapshots do not belong to the same deck")
+
+    new_card_ids = {card['card_id'] for card in new_snapshot.get('library_cards', [])}
+    old_card_ids = {card['card_id'] for card in old_snapshot.get('library_cards', [])}
+
+    if not new_card_ids and not old_card_ids:
+        raise HTTPException(status_code=404, detail="No cards found in either snapshot")
+
+    added_cards = new_card_ids - old_card_ids
+    removed_cards = old_card_ids - new_card_ids
+
+    return {
+        "added_cards": list(added_cards),
+        "removed_cards": list(removed_cards)
+    }
