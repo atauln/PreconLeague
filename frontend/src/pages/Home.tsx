@@ -197,6 +197,7 @@ export default function Home() {
         <Typography variant="h6">All decks</Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Button component={RouterLink} to="/leaderboards" variant="contained">Leaderboards</Button>
+          <Button component={RouterLink} to="/analytics" variant="outlined">Analytics</Button>
           <Tooltip title="Sample rules for the week">
             <IconButton onClick={openRules} aria-label="weekly rules">
               <InfoOutlined />
