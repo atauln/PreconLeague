@@ -17,8 +17,15 @@ import {
   Alert,
   Link as MuiLink,
   Avatar,
-  CardMedia
+  CardMedia,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Tooltip,
 } from '@mui/material'
+import InfoOutlined from '@mui/icons-material/InfoOutlined'
 
 interface Snapshot {
   snapshot_id: number
@@ -67,6 +74,9 @@ const apiUrl = (path: string) => {
   return `${origin}/api${path}`
 }
 
+const START_DATE_OF_LEAGUE = new Date('2026-01-12T00:00:00Z')
+const CURRENT_WEEK_OF_LEAGUE = Math.floor((Date.now() - START_DATE_OF_LEAGUE.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
+
 export default function Home() {
   const [decks, setDecks] = useState<Deck[]>([])
   const [loading, setLoading] = useState(false)
@@ -76,6 +86,10 @@ export default function Home() {
   const [deckUrl, setDeckUrl] = useState('')
   const [creating, setCreating] = useState(false)
   const [createMessage, setCreateMessage] = useState<string | null>(null)
+  const [rulesOpen, setRulesOpen] = useState(false)
+
+  const openRules = () => setRulesOpen(true)
+  const closeRules = () => setRulesOpen(false)
 
   useEffect(() => {
     fetchDecks()
@@ -172,6 +186,7 @@ export default function Home() {
 
 
   return (
+    <>
     <Container maxWidth={false} sx={{ py: 4, px: 2 }}>
       <Box mb={3}>
         <Typography variant="h5">Precon League — Home</Typography>
@@ -180,7 +195,14 @@ export default function Home() {
 
       <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h6">All decks</Typography>
-        <Button component={RouterLink} to="/leaderboards" variant="contained">Leaderboards</Button>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button component={RouterLink} to="/leaderboards" variant="contained">Leaderboards</Button>
+          <Tooltip title="Sample rules for the week">
+            <IconButton onClick={openRules} aria-label="weekly rules">
+              <InfoOutlined />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {loading && <Box my={2}><CircularProgress /></Box>}
@@ -280,5 +302,41 @@ export default function Home() {
         {createMessage && <Typography sx={{ mt: 2 }}>{createMessage}</Typography>}
       </Box>
     </Container>
+      <Dialog open={rulesOpen} onClose={closeRules} fullWidth maxWidth="sm">
+        <DialogTitle>Rules for Week {CURRENT_WEEK_OF_LEAGUE}</DialogTitle>
+        <DialogContent dividers>
+          <Typography sx={{ mb: 1 }}>
+            These are the rules for the current week of the Precon League:
+          </Typography>
+            <Typography sx={{ mb: 2 }}>
+              Bombs rotate weekly. This week's bomb is a 
+              <Typography component="span" sx={{ fontWeight: 'bold', color: 'primary.main', mx: 0.5 }}>
+              {CURRENT_WEEK_OF_LEAGUE % 2 === 1 ? 'land' : 'nonland'}
+              </Typography>
+              card.
+            </Typography>
+            <ul>
+            <li style={{ marginBottom: '8px' }}>Each week you may swap in up to 5 land cards (each under $5), and up to 5 nonland cards (each under $5).</li>
+            <li style={{ marginBottom: '8px' }}>In addition, depending on the week, you may swap in one "bomb" card (land or nonland) under $25.</li>
+            <li style={{ marginBottom: '8px' }}>You may swap out any cards from your deck, but must adhere to the above limits for cards swapped in.</li>
+            <li style={{ marginBottom: '8px' }}>Card pricing is determined by the lowest available price from either:
+              <ul>
+              <li style={{ marginBottom: '4px' }}>Millennium (any condition)</li>
+              <li>TCGPlayer/online vendor</li>
+              </ul>
+            </li>
+            <li style={{ marginBottom: '8px' }}>You may use special printings of cards (e.g., Secret Lair, special guests) even if they exceed the pricing criteria above.
+              <ul>
+              <li style={{ marginBottom: '4px' }}>For example, if a regular printing of a card is $6 but a special printing is $4, you may use the special printing.</li>
+              <li>Alternatively, if the special printing is $6 but there is an available regular printing under $5, you may still use the special printing.</li>
+              </ul>
+            </li>
+            <li style={{ marginBottom: '8px' }}>There are currently no restrictions on card art choices.</li>
+            </ul>
+        </DialogContent>
+        <DialogActions>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 }
