@@ -19,8 +19,12 @@ import {
   DialogActions,
   CircularProgress,
   Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Link as MuiLink,
 } from '@mui/material'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
 interface Deck {
   deck_id: number
@@ -258,30 +262,55 @@ export default function DeckEditor() {
 
       {snapshots.length === 0 && !loading && <Typography>No snapshots yet.</Typography>}
 
-      <Grid container spacing={2}>
-        {snapshots.map((s) => (
-          <Grid key={s.snapshot_id}>
-            <Card>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                  <Typography variant="subtitle1">{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</Typography>
-                  <Typography color="text.secondary">{formatDate(s.created_at)}</Typography>
-                </Box>
+      <Box>
+        {(() => {
+          const groups = snapshots.reduce((acc: Record<number, Snapshot[]>, s) => {
+            const key = s.week_of_league ?? -1
+            if (!acc[key]) acc[key] = []
+            acc[key].push(s)
+            return acc
+          }, {})
 
-                <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
-                  <Box style={{ paddingRight: '1rem' }}>
-                    <Typography variant="body2">Commander: {fetchCardName(s.commander_id)}</Typography>
-                    <Typography variant="body2">Power Level: {formatNumber(s.power_level_rating, 3)}</Typography>
-                  </Box>
-                  <Box>
-                    <Button variant="outlined" size="small" onClick={() => openDetails(s)} sx={{ mr: 1 }}>Details</Button>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+          const sortedKeys = Object.keys(groups)
+            .map((k) => Number(k))
+            .sort((a, b) => b - a)
+
+          return sortedKeys.map((wk) => (
+            <Accordion key={wk} sx={{ mb: 2 }}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography sx={{ fontWeight: 'bold' }}>{wk >= 0 ? `Week ${wk}` : 'Unassigned'}</Typography>
+                <Typography sx={{ ml: 2, color: 'text.secondary' }}>{groups[wk].length} snapshot(s)</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  {groups[wk].map((s) => (
+                    <Grid item xs={12} sm={6} md={4} key={s.snapshot_id}>
+                      <Card>
+                        <CardContent>
+                          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                            <Typography variant="subtitle1">{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</Typography>
+                            <Typography color="text.secondary">{formatDate(s.created_at)}</Typography>
+                          </Box>
+
+                          <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
+                            <Box style={{ paddingRight: '1rem' }}>
+                              <Typography variant="body2">Commander: {fetchCardName(s.commander_id)}</Typography>
+                              <Typography variant="body2">Power Level: {formatNumber(s.power_level_rating, 3)}</Typography>
+                            </Box>
+                            <Box>
+                              <Button variant="outlined" size="small" onClick={() => openDetails(s)} sx={{ mr: 1 }}>Details</Button>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          ))
+        })()}
+      </Box>
 
       <Dialog open={modalOpen} onClose={closeDetails} maxWidth="sm" fullWidth>
         <DialogTitle>{selectedSnapshot ? selectedSnapshot.snapshot_name || `Snapshot ${selectedSnapshot.snapshot_id}` : 'Snapshot Details'}</DialogTitle>
