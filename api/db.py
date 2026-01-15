@@ -219,9 +219,8 @@ async def create_snapshot(
 async def associate_card_with_snapshot(snapshot_id: int, card_id: str) -> bool:
     """Associate a card with a snapshot in the library"""
     query = """
-    INSERT INTO library_cards (snapshot_id, card_id) 
-    VALUES ($1, $2)
-    ON CONFLICT (snapshot_id, card_id) DO NOTHING;
+    INSERT INTO library_cards (snapshot_id, card_id)
+    VALUES ($1, $2);
     """
     return await execute_update(query, (snapshot_id, card_id))
 
@@ -257,7 +256,11 @@ async def create_cards_bulk(cards: List[tuple]) -> bool:
 
 
 async def associate_cards_with_snapshot_bulk(snapshot_id: int, card_ids: List[str]) -> bool:
-    """Associate multiple card_ids with a snapshot in a single executemany call."""
+    """Associate multiple card_ids with a snapshot in a single executemany call.
+
+    `card_ids` may include repeated IDs to represent multiple copies; this function
+    will insert one row per list entry (no conflict handling).
+    """
     if not card_ids:
         return True
     conn = await get_connection()
@@ -266,7 +269,7 @@ async def associate_cards_with_snapshot_bulk(snapshot_id: int, card_ids: List[st
     try:
         params = [(snapshot_id, cid) for cid in card_ids]
         await conn.executemany(
-            "INSERT INTO library_cards (snapshot_id, card_id) VALUES ($1, $2) ON CONFLICT (snapshot_id, card_id) DO NOTHING;",
+            "INSERT INTO library_cards (snapshot_id, card_id) VALUES ($1, $2);",
             params,
         )
         return True

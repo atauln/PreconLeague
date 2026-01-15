@@ -227,22 +227,41 @@ export default function DeckEditor() {
     )
   }
 
-  async function getChangedCards(newSnapId: number, oldSnapId: number): Promise<{ added: string[]; removed: string[] }> {
-    // returns an object { added_cards: string[], removed_cards: string[] }
+  type ChangedCard = { card_id?: string | null; card_name?: string | null; quantity: number }
+
+  async function getChangedCards(newSnapId: number, oldSnapId: number): Promise<{ added: ChangedCard[]; removed: ChangedCard[] }> {
+    // backend now returns arrays of objects: { card_id, card_name, quantity }
+    // but keep backward-compat: if strings are returned, treat them as ids with qty=1
     try {
       const res = await fetch(apiUrl(`/snapshots/${newSnapId}/changes/${oldSnapId}`))
       if (!res.ok) throw new Error(`Fetch changed cards failed: ${res.status}`)
       const data = await res.json()
+
+      const normalize = (arr: any): ChangedCard[] => {
+        if (!Array.isArray(arr)) return []
+        if (arr.length === 0) return []
+        // strings (legacy)
+        if (typeof arr[0] === 'string') {
+          return arr.map((id: string) => ({ card_id: id, card_name: id, quantity: 1 }))
+        }
+        // objects shape
+        return arr.map((it: any) => ({
+          card_id: it.card_id ?? it.id ?? null,
+          card_name: it.card_name ?? it.name ?? null,
+          quantity: Number.isInteger(it.quantity) ? it.quantity : 1,
+        }))
+      }
+
       return {
-        added: Array.isArray(data.added_cards) ? data.added_cards : [],
-        removed: Array.isArray(data.removed_cards) ? data.removed_cards : [],
+        added: normalize(data.added_cards),
+        removed: normalize(data.removed_cards),
       }
     } catch {
       return { added: [], removed: [] }
     }
   }
 
-  const [changedCards, setChangedCards] = useState<{ added: string[]; removed: string[] } | null>(null)
+  const [changedCards, setChangedCards] = useState<{ added: ChangedCard[]; removed: ChangedCard[] } | null>(null)
   const [changedCardsLoading, setChangedCardsLoading] = useState(false)
 
   useEffect(() => {
@@ -575,34 +594,51 @@ export default function DeckEditor() {
                       <Typography color="text.secondary">None</Typography>
                     ) : (
                       <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                        {changedCards.added.map((cardId) => (
-                          <Tooltip
-                            key={`added-${cardId}`}
-                            title={
-                              <Box>
-                                <Box
-                                  component="img"
-                                  src={`https://cards.scryfall.io/normal/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
-                                  alt={cardId}
-                                  sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                  loading="lazy"
-                                />
-                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{fetchCardName(cardId)}</Typography>
-                              </Box>
-                            }
-                            placement="top"
-                            arrow
-                          >
-                            <Box
-                              component="img"
-                              src={`https://cards.scryfall.io/art_crop/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
-                              alt={cardId}
-                              sx={{ height: 80, width: 'auto', borderRadius: 1 }}
-                              loading="lazy"
-                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                            />
-                          </Tooltip>
-                        ))}
+                        {changedCards.added.map((card, i) => {
+                          const cardId = card.card_id ?? null
+                          const cardName = card.card_name ?? (cardId ? fetchCardName(cardId) : null)
+                          const key = `added-${cardId || cardName}-${i}`
+                          const imgSrcNormal = cardId
+                            ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
+                            : null
+                          const imgSrcThumb = cardId
+                            ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
+                            : `https://svgs.scryfall.io/card-symbols/mana.svg`
+
+                          return (
+                            <Tooltip
+                              key={key}
+                              title={
+                                <Box>
+                                  {imgSrcNormal ? (
+                                    <Box
+                                      component="img"
+                                      src={imgSrcNormal}
+                                      alt={cardName || cardId || ''}
+                                      sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                      loading="lazy"
+                                    />
+                                  ) : null}
+                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
+                                  {card.quantity && card.quantity > 1 ? (
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.25 }}>Quantity: {card.quantity}</Typography>
+                                  ) : null}
+                                </Box>
+                              }
+                              placement="top"
+                              arrow
+                            >
+                              <Box
+                                component="img"
+                                src={imgSrcThumb}
+                                alt={cardName ?? cardId ?? ''}
+                                sx={{ height: 80, width: 'auto', borderRadius: 1 }}
+                                loading="lazy"
+                                onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                              />
+                            </Tooltip>
+                          )
+                        })}
                       </Box>
                     )}
                   </Grid>
@@ -612,34 +648,51 @@ export default function DeckEditor() {
                       <Typography color="text.secondary">None</Typography>
                     ) : (
                       <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                        {changedCards.removed.map((cardId) => (
-                          <Tooltip
-                            key={`removed-${cardId}`}
-                            title={
-                              <Box>
-                                <Box
-                                  component="img"
-                                  src={`https://cards.scryfall.io/normal/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
-                                  alt={cardId}
-                                  sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                  loading="lazy"
-                                />
-                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{fetchCardName(cardId)}</Typography>
-                              </Box>
-                            }
-                            placement="top"
-                            arrow
-                          >
-                            <Box
-                              component="img"
-                              src={`https://cards.scryfall.io/art_crop/front/${cardId?.charAt(0)}/${cardId?.charAt(1)}/${cardId}.jpg`}
-                              alt={cardId}
-                              sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
-                              loading="lazy"
-                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                            />
-                          </Tooltip>
-                        ))}
+                        {changedCards.removed.map((card, i) => {
+                          const cardId = card.card_id ?? null
+                          const cardName = card.card_name ?? (cardId ? fetchCardName(cardId) : null)
+                          const key = `removed-${cardId || cardName}-${i}`
+                          const imgSrcNormal = cardId
+                            ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
+                            : null
+                          const imgSrcThumb = cardId
+                            ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
+                            : `https://svgs.scryfall.io/card-symbols/mana.svg`
+
+                          return (
+                            <Tooltip
+                              key={key}
+                              title={
+                                <Box>
+                                  {imgSrcNormal ? (
+                                    <Box
+                                      component="img"
+                                      src={imgSrcNormal}
+                                      alt={cardName || cardId || ''}
+                                      sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                      loading="lazy"
+                                    />
+                                  ) : null}
+                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
+                                  {card.quantity && card.quantity > 1 ? (
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.25 }}>Quantity: {card.quantity}</Typography>
+                                  ) : null}
+                                </Box>
+                              }
+                              placement="top"
+                              arrow
+                            >
+                              <Box
+                                component="img"
+                                src={imgSrcThumb}
+                                alt={cardName ?? cardId ?? ''}
+                                sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                                loading="lazy"
+                                onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                              />
+                            </Tooltip>
+                          )
+                        })}
                       </Box>
                     )}
                   </Grid>

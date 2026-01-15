@@ -47,5 +47,6 @@ def fetch_moxfield_deck(deck_url: str) -> Deck:
 
 if __name__ == "__main__":
     # Example usage
-    deck_data = fetch_moxfield_deck("https://moxfield.com/decks/LM4iEoDjRkyXEkMAKDermQ")
+    deck_data = fetch_moxfield_deck("https://moxfield.com/decks/zhU0jK8bnkeSMMk3dj0N9g")
     print(deck_data)
+    print(deck_data.library)

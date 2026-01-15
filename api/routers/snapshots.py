@@ -117,8 +117,17 @@ async def trigger_create_snapshot(deck_id: int):
         week_of_league=CURRENT_WEEK_NUMBER
     )
 
-    # Batch card handling: check which cards already exist, insert missing, then bulk-associate
-    card_ids = [card.id for card in proc_deck.library]
+    # Batch card handling: expand card IDs to repeat per-card quantities
+    # so the DB will receive one row per copy.
+    card_ids = []
+    for card in proc_deck.library:
+        cid = getattr(card, 'id', None)
+        if cid is None:
+            continue
+        qty = getattr(card, 'quantity', None)
+        qty = qty if isinstance(qty, int) and qty > 0 else 1
+        for _ in range(qty):
+            card_ids.append(cid)
     # Query existing cards in one go
     existing_cards = await get_cards_by_ids(card_ids)
     existing_ids = {c.get('oracle_card_id') for c in existing_cards}
@@ -128,7 +137,7 @@ async def trigger_create_snapshot(deck_id: int):
     if missing_cards:
         await create_cards_bulk(missing_cards)
 
-    # Associate all library cards with the snapshot in bulk
+    # Associate all library cards with the snapshot in bulk (card_ids may contain duplicates)
     await associate_cards_with_snapshot_bulk(snapshot_id, card_ids)
     
     if snapshot_id:
@@ -176,17 +185,70 @@ async def read_snapshot_changes(snapshot_id: int, old_snapshot_id: int):
         raise HTTPException(status_code=404, detail="One or both snapshots not found")
     if new_snapshot.get("deck_id") != old_snapshot.get("deck_id"):
         raise HTTPException(status_code=400, detail="Snapshots do not belong to the same deck")
+    # Build counts for each card_id in both snapshots. Some entries may
+    # include an explicit `quantity` field; others may appear multiple
+    # times (one entry per copy). Support both patterns.
+    def _counts_from_library(lib_cards: list) -> tuple:
+        """Return (counts, meta) where:
+        - counts maps a canonical key (prefer card_name when available, otherwise oracle id)
+          to total quantity (number of rows / summed quantity).
+        - meta maps the same canonical key to a dict with keys `card_id` (example
+          oracle_card_id) and `card_name` (if available).
+        """
+        counts = {}
+        meta = {}
+        for c in lib_cards or []:
+            # support a few possible id keys coming from different codepaths
+            card_id = c.get('card_id') or c.get('oracle_card_id') or c.get('id')
+            card_name = c.get('card_name') or c.get('card_name') or c.get('name')
+            if card_id is None and not card_name:
+                continue
 
-    new_card_ids = {card['card_id'] for card in new_snapshot.get('library_cards', [])}
-    old_card_ids = {card['card_id'] for card in old_snapshot.get('library_cards', [])}
+            # canonical key: prefer name when present so variants map together
+            key = card_name if card_name else card_id
 
-    if not new_card_ids and not old_card_ids:
+            # quantity: older rows may have explicit `quantity`, but most rows are
+            # one per copy (repeated rows). Support both patterns.
+            qty = c.get('quantity') if isinstance(c.get('quantity'), int) else 1
+
+            counts[key] = counts.get(key, 0) + (qty or 0)
+            # store an example oracle id and name for this key (if not already set)
+            if key not in meta:
+                meta[key] = {'card_id': card_id, 'card_name': card_name}
+
+        return counts, meta
+
+    new_counts, new_meta = _counts_from_library(new_snapshot.get('library_cards', []))
+    old_counts, old_meta = _counts_from_library(old_snapshot.get('library_cards', []))
+
+    if not new_counts and not old_counts:
         raise HTTPException(status_code=404, detail="No cards found in either snapshot")
 
-    added_cards = new_card_ids - old_card_ids
-    removed_cards = old_card_ids - new_card_ids
+    added_cards = []
+    removed_cards = []
+
+    all_keys = set(new_counts.keys()) | set(old_counts.keys())
+    for key in all_keys:
+        n_qty = new_counts.get(key, 0)
+        o_qty = old_counts.get(key, 0)
+        qty_diff = abs(n_qty - o_qty)
+        if qty_diff == 0:
+            continue
+
+        # Prefer metadata from the 'new' snapshot if available, otherwise fall back
+        meta = new_meta.get(key) or old_meta.get(key) or {'card_id': None, 'card_name': None}
+        entry = {
+            'card_id': meta.get('card_id'),
+            'card_name': meta.get('card_name'),
+            'quantity': qty_diff,
+        }
+
+        if n_qty > o_qty:
+            added_cards.append(entry)
+        else:
+            removed_cards.append(entry)
 
     return {
-        "added_cards": list(added_cards),
-        "removed_cards": list(removed_cards)
+        "added_cards": added_cards,
+        "removed_cards": removed_cards
     }

@@ -58,8 +58,7 @@ CREATE TABLE snapshots (
 CREATE TABLE library_cards (
     library_card_id SERIAL PRIMARY KEY,
     snapshot_id INTEGER REFERENCES snapshots(snapshot_id),
-    card_id TEXT REFERENCES cards(oracle_card_id),
-    UNIQUE(snapshot_id, card_id)
+    card_id TEXT REFERENCES cards(oracle_card_id)
 );
 
 --Indexes for performance optimization
