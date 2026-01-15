@@ -271,29 +271,30 @@ export default function Home() {
                       >
                         <Tooltip
                           title={
-                            <Box>
-                              {imgSrcNormal ? (
-                                <Box
-                                  component="img"
-                                  src={imgSrcNormal}
-                                  alt={d.commander_name ?? cid}
-                                  sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                  loading="lazy"
-                                />
-                              ) : null}
-                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
-                            </Box>
+                          <Box>
+                            {imgSrcNormal ? (
+                            <Box
+                              component="img"
+                              src={imgSrcNormal}
+                              alt={d.commander_name ?? cid}
+                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                              loading="lazy"
+                            />
+                            ) : null}
+                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
+                          </Box>
                           }
-                          placement="top"
+                          placement="left"
                           arrow
+                          PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
                         >
                           <Box
-                            component="img"
-                            src={imgSrcThumb}
-                            alt={`${d.deck_name} commander art`}
-                            sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
-                            loading="lazy"
-                            onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
+                          component="img"
+                          src={imgSrcThumb}
+                          alt={`${d.deck_name} commander art`}
+                          sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
+                          loading="lazy"
+                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
                           />
                         </Tooltip>
                       </MuiLink>
