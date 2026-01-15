@@ -17,7 +17,6 @@ import {
   Alert,
   Link as MuiLink,
   Avatar,
-  CardMedia,
   Dialog,
   DialogTitle,
   DialogContent,

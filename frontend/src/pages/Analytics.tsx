@@ -13,9 +13,7 @@ import {
   Button,
   Paper,
   Checkbox,
-  FormControlLabel,
   Menu,
-  IconButton,
   ListItemIcon,
   ListItemText,
   Divider,
@@ -272,7 +270,7 @@ function MultiLineChart({
   })
 
   // align series to allKeys
-  const aligned = series.map((s, idx) => {
+  const aligned = series.map((s, _) => {
     const map = new Map(s.data.map((d) => [d.x, d]))
     return { name: s.name, data: allKeys.map((k) => ({ x: k, y: map.get(k)?.y ?? null })), stroke: s.stroke }
   })
@@ -292,7 +290,6 @@ function MultiLineChart({
   const bottomMargin = 40
   const chartWidth = Math.max(50, actualWidth - leftMargin - rightMargin)
   const chartInnerHeight = Math.max(30, height - topMargin - bottomMargin)
-  const chartHeight = height
   const px = (i: number) => (allKeys.length === 1 ? leftMargin + chartWidth / 2 : leftMargin + (i / (allKeys.length - 1)) * chartWidth)
   const py = (v: number) => (topMargin + (1 - (v - y0) / (y1 - y0)) * chartInnerHeight)
 
@@ -712,7 +709,7 @@ export default function Analytics() {
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <Tabs value={metricIndex} onChange={(_, v) => setMetricIndex(v)} variant="scrollable" scrollButtons="auto" aria-label="metric tabs">
-                    {metrics.map((m, i) => (
+                    {metrics.map((m, _) => (
                       <Tab key={m.id} label={m.label} />
                     ))}
                   </Tabs>
@@ -728,7 +725,7 @@ export default function Analytics() {
                     <Typography color="text.secondary">No data available for All Decks.</Typography>
                   ) : (
                     <MultiLineChart
-                      series={allDecksSnapshots.map((d, idx) => ({
+                      series={allDecksSnapshots.map((d, _) => ({
                         name: d.deck_name,
                         data: (() => {
                           // map weekly snapshots to x,y where x is week key (W#)
