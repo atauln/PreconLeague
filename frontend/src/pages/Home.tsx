@@ -175,8 +175,24 @@ export default function Home() {
       const data = await res.json()
       setCreateMessage(`Deck created with id ${data.deck_id}`)
       setDeckUrl('')
-      // Refresh list
-      fetchDecks()
+
+      // Create an initial snapshot for the newly-registered deck before returning
+      try {
+        const snapRes = await fetch(apiUrl(`/snapshots/create_snapshot/${data.deck_id}`), { method: 'POST' })
+        if (!snapRes.ok) {
+          const snapText = await snapRes.text().catch(() => '')
+          console.warn(`Initial snapshot failed for deck ${data.deck_id}:`, snapRes.status, snapText)
+          setCreateMessage((prev) => `${prev} — snapshot creation failed (${snapRes.status})`)
+        } else {
+          setCreateMessage((prev) => `${prev} — initial snapshot created`)
+        }
+      } catch (snapErr: unknown) {
+        console.warn('Initial snapshot error:', snapErr)
+        setCreateMessage((prev) => `${prev} — snapshot error: ${snapErr instanceof Error ? snapErr.message : String(snapErr)}`)
+      }
+
+      // Refresh list after attempting snapshot creation
+      await fetchDecks()
     } catch (err: unknown) {
       setCreateMessage(`Error: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
