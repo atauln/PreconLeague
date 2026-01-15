@@ -112,26 +112,36 @@ export default function Home() {
       const data = await res.json()
       if (!Array.isArray(data)) {
         setDecks([])
+        return
       }
-      // For each deck, fetch its most recent snapshot
-      for (const deck of data) {
+
+      // Fetch each deck's most recent snapshot (and commander card data) in parallel.
+      // We catch errors per-deck so a failure for one deck doesn't abort the whole batch.
+      const deckPromises = data.map(async (deck: any) => {
         try {
           const snapshot = await fetchMostRecentSnapshot(deck.deck_id)
           deck.most_recent_snapshot = snapshot
-          // set the deck's colors based on the most recent snapshot's commander_id
           if (snapshot && snapshot.commander_id) {
-            const cardData = await fetchCardData(snapshot.commander_id)
-            deck.colors = cardData.color_identity || []
+            try {
+              const cardData = await fetchCardData(snapshot.commander_id)
+              deck.colors = cardData.color_identity || []
+            } catch (cardErr) {
+              console.warn(`Failed to fetch card data for commander ${snapshot.commander_id}:`, cardErr)
+              deck.colors = []
+            }
           } else {
             deck.colors = []
           }
         } catch (err) {
-          // If fetching the snapshot fails, just log and continue
           console.warn(`Failed to fetch most recent snapshot for deck ${deck.deck_id}:`, err)
           deck.most_recent_snapshot = null
+          deck.colors = []
         }
-      }
-      setDecks(data)
+        return deck
+      })
+
+      const enriched = await Promise.all(deckPromises)
+      setDecks(enriched)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
