@@ -569,45 +569,23 @@ export default function Analytics() {
     setLoadingAllDecks(true)
     setError(null)
     try {
-      const results: Array<{ deck_id: number; deck_name: string; weekly: Snapshot[] }> = []
+      // Use the bulk endpoint that returns the most recent snapshot per deck per week
+      // so the frontend can aggregate across decks without issuing many requests.
+      const res = await fetch(apiUrl('/snapshots/most_recent/per_deck'))
+      if (!res.ok) throw new Error(`Bulk snapshots fetch failed: ${res.status}`)
+      const json = await res.json()
+      const list = Array.isArray(json) ? json as Snapshot[] : []
 
-      // fetch in parallel with a small concurrency limit to avoid overloading the API
-      const concurrency = 8
-      const batches: Deck[][] = []
-      for (let i = 0; i < decks.length; i += concurrency) batches.push(decks.slice(i, i + concurrency))
-
-      for (const batch of batches) {
-        const promises = batch.map(async (d) => {
-          try {
-            const res = await fetch(apiUrl(`/snapshots/deck/${d.deck_id}`))
-            if (!res.ok) return null
-            const json = await res.json()
-            const snaps = Array.isArray(json) ? (json as Snapshot[]) : []
-            const sorted = snaps.slice().sort((a: Snapshot, b: Snapshot) => {
-              const ta = a.created_at ? new Date(a.created_at).getTime() : 0
-              const tb = b.created_at ? new Date(b.created_at).getTime() : 0
-              return ta - tb
-            })
-            const map = new Map<string, Snapshot>()
-            for (const s of sorted) {
-              const key = getWeekKey(s)
-              map.set(key, s)
-            }
-            const weekly = Array.from(map.values())
-            // exclude decks that don't have a W0 or W1 snapshot (treat as outliers)
-            const keys = Array.from(map.keys())
-            const hasW0orW1 = keys.includes('W0') || keys.includes('W1')
-            if (!hasW0orW1) return null
-            return { deck_id: d.deck_id, deck_name: d.deck_name, weekly }
-          } catch (err) {
-            return null
-          }
-        })
-
-        const settled = await Promise.all(promises)
-        for (const r of settled) if (r) results.push(r)
+      // Group by deck_id into the shape { deck_id, deck_name, weekly: Snapshot[] }
+      const map = new Map<number, { deck_id: number; deck_name: string; weekly: Snapshot[] }>()
+      for (const s of list) {
+        const did = s.deck_id as number
+        const dname = (s as any).deck_name || ''
+        if (!map.has(did)) map.set(did, { deck_id: did, deck_name: dname, weekly: [] })
+        map.get(did)!.weekly.push(s as Snapshot)
       }
 
+      const results = Array.from(map.values())
       setAllDecksSnapshots(results)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : String(err))

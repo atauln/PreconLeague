@@ -428,6 +428,24 @@ async def get_all_snapshots() -> List[Dict[str, Any]]:
     """
     return await execute_query(query)
 
+
+async def get_most_recent_snapshots_per_deck_all_weeks() -> List[Dict[str, Any]]:
+    """Retrieve the most recent snapshot per deck per week_of_league.
+
+    Uses DISTINCT ON to pick the newest snapshot (by created_at) for each
+    (deck_id, week_of_league) pair. Only snapshots with a non-null
+    `week_of_league` are returned.
+    """
+    query = """
+    SELECT DISTINCT ON (s.deck_id, s.week_of_league) s.*, d.deck_name, u.user_name
+    FROM snapshots s
+    JOIN decks d ON s.deck_id = d.deck_id
+    JOIN users u ON d.user_id = u.user_id
+    WHERE s.week_of_league IS NOT NULL
+    ORDER BY s.deck_id, s.week_of_league, s.created_at DESC;
+    """
+    return await execute_query(query)
+
 async def get_deck_snapshots(deck_id: int) -> List[Dict[str, Any]]:
     """Retrieve all snapshots for a specific deck"""
     query = "SELECT * FROM snapshots WHERE deck_id = $1;"

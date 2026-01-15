@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from db import get_snapshot_by_id, get_all_snapshots, create_snapshot, get_deck_snapshots, get_most_recent_snapshot_for_deck
+from db import get_most_recent_snapshots_per_deck_all_weeks
 from db import get_snapshot_with_library, get_deck_by_id, associate_card_with_snapshot
 from db import get_card_by_id, create_card
 from db import get_all_snapshots_for_week, update_snapshot_week
@@ -167,6 +168,19 @@ async def read_most_recent_snapshots_for_week(week_of_league: int):
     if snapshots:
         return __sort_snapshots_by_date(snapshots)
     raise HTTPException(status_code=404, detail="No snapshots found for this week")
+
+
+@router.get("/most_recent/per_deck")
+async def read_most_recent_snapshots_per_deck_all_weeks():
+    """Return the most recent snapshot per deck per week (only snapshots with week_of_league set).
+
+    This endpoint is intended for bulk consumption by analytics pages so the
+    frontend can fetch aggregated "All Decks" metrics in a single request.
+    """
+    snapshots = await get_most_recent_snapshots_per_deck_all_weeks()
+    if snapshots:
+        return __sort_snapshots_by_date(snapshots)
+    raise HTTPException(status_code=404, detail="No snapshots found")
 
 #update week of snapshot for manual corrections
 @router.put("/{snapshot_id}/week/{new_week_of_league}")
