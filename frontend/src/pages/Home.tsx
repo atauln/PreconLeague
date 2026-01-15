@@ -57,6 +57,7 @@ interface Deck {
   deck_name: string
   most_recent_snapshot: Snapshot | null
   colors: string[]
+  commander_name?: string | null
 }
 // Build API URL from Vite env var. We do NOT rely on Vite's dev proxy `/api`.
 // Set `VITE_API_URL` at build time (or via build-arg) to the full API origin
@@ -125,17 +126,21 @@ export default function Home() {
             try {
               const cardData = await fetchCardData(snapshot.commander_id)
               deck.colors = cardData.color_identity || []
+              deck.commander_name = cardData.name ?? null
             } catch (cardErr) {
               console.warn(`Failed to fetch card data for commander ${snapshot.commander_id}:`, cardErr)
               deck.colors = []
+              deck.commander_name = null
             }
           } else {
             deck.colors = []
+            deck.commander_name = null
           }
         } catch (err) {
           console.warn(`Failed to fetch most recent snapshot for deck ${deck.deck_id}:`, err)
           deck.most_recent_snapshot = null
           deck.colors = []
+          deck.commander_name = null
         }
         return deck
       })
@@ -255,22 +260,46 @@ export default function Home() {
                       />
                     ))}
                   </Box>
-                  {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (
-                    <MuiLink
-                      component={RouterLink}
-                      to={`/decks/${d.deck_id}`}
-                      sx={{ display: 'block', textDecoration: 'none' }}
-                    >
-                      <CardMedia
-                        component="img"
-                        image={`https://cards.scryfall.io/art_crop/front/${d.most_recent_snapshot.commander_id.charAt(0)}/${d.most_recent_snapshot.commander_id.charAt(1)}/${d.most_recent_snapshot.commander_id}.jpg`}
-                        alt={`${d.deck_name} commander art`}
-                        sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
-                        loading="lazy"
-                        onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
-                      />
-                    </MuiLink>
-                  )}
+                  {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (() => {
+                    const cid = d.most_recent_snapshot!.commander_id!
+                    const imgSrcNormal = `https://cards.scryfall.io/normal/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                    const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                    return (
+                      <MuiLink
+                        component={RouterLink}
+                        to={`/decks/${d.deck_id}`}
+                        sx={{ display: 'block', textDecoration: 'none' }}
+                      >
+                        <Tooltip
+                          title={
+                            <Box>
+                              {imgSrcNormal ? (
+                                <Box
+                                  component="img"
+                                  src={imgSrcNormal}
+                                  alt={d.commander_name ?? cid}
+                                  sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                  loading="lazy"
+                                />
+                              ) : null}
+                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
+                            </Box>
+                          }
+                          placement="top"
+                          arrow
+                        >
+                          <Box
+                            component="img"
+                            src={imgSrcThumb}
+                            alt={`${d.deck_name} commander art`}
+                            sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
+                            loading="lazy"
+                            onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
+                          />
+                        </Tooltip>
+                      </MuiLink>
+                    )
+                  })()}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="subtitle1" noWrap>{d.deck_name}</Typography>
                     <Typography color="text.secondary">Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
