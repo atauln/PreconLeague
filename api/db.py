@@ -128,7 +128,11 @@ async def create_snapshot(
     archetype_major: Optional[str] = None,
     price_usd: Optional[float] = None,
     created_at: Optional[str] = None,
-    week_of_league: Optional[int] = None
+    week_of_league: Optional[int] = None,
+    mana_fixing_score: Optional[float] = None,
+    competitive_intent: Optional[int] = None,
+    commander_tier: Optional[int] = None,
+    card_quality: Optional[float] = None,
 ) -> Optional[int]:
     """Create a new snapshot and return the snapshot_id"""
     if created_at:
@@ -149,9 +153,13 @@ async def create_snapshot(
             archetype_minor,
             archetype_major,
             price_usd,
-            week_of_league
+            week_of_league,
+            mana_fixing_score,
+            competitive_intent,
+            commander_tier,
+            card_quality
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
         )
         RETURNING snapshot_id;
         """
@@ -171,7 +179,11 @@ async def create_snapshot(
             archetype_minor,
             archetype_major,
             price_usd,
-            week_of_league
+            week_of_league,
+            mana_fixing_score,
+            competitive_intent,
+            commander_tier,
+            card_quality
         )
     else:
         query = """
@@ -190,9 +202,13 @@ async def create_snapshot(
             archetype_minor,
             archetype_major,
             price_usd,
-            week_of_league
+            week_of_league,
+            mana_fixing_score,
+            competitive_intent,
+            commander_tier,
+            card_quality
         ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
         )
         RETURNING snapshot_id;
         """
@@ -211,7 +227,11 @@ async def create_snapshot(
             archetype_minor,
             archetype_major,
             price_usd,
-            week_of_league
+            week_of_league,
+            mana_fixing_score,
+            competitive_intent,
+            commander_tier,
+            card_quality
         )
     result = await execute_update_returning(query, params)
     return result['snapshot_id'] if result else None

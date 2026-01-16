@@ -38,6 +38,10 @@ interface SnapshotWithDeck {
   synergy_rating?: number | null
   combo_rating?: number | null
   manabase_score?: number | null
+  mana_fixing_score?: number | null
+  competitive_intent?: number | null
+  commander_tier?: number | null
+  card_quality?: number | null
 }
 
 const remoteApi = (import.meta.env.VITE_API_URL as string) || ''
@@ -53,6 +57,10 @@ const METRICS: { key: keyof SnapshotWithDeck; label: string }[] = [
   { key: 'synergy_rating', label: 'Synergy' },
   { key: 'combo_rating', label: 'Combo' },
   { key: 'manabase_score', label: 'Manabase Score' },
+  { key: 'mana_fixing_score', label: 'Mana Fixing Score' },
+  { key: 'competitive_intent', label: 'Competitive Intent' },
+  { key: 'commander_tier', label: 'Commander Tier' },
+  { key: 'card_quality', label: 'Card Quality' },
 ]
 
 export default function Leaderboards() {

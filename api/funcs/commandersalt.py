@@ -35,6 +35,13 @@ def fetch_commandersalt_deck_data(deck_url: str) -> dict:
         'archetype_minor': data.get('archetypeMinor'),
         'archetype_major': data.get('archetypeMajor'),
         'price_usd': float(data.get('price').get('usd')),
+        'mana_fixing_score': float(data.get('details').get('manabase').get('manaFixingScore')),
+        'salt_scoring': data.get('details').get('salt').get('scoring'),
+        'competitive_intent': int(data.get('details').get('brackets').get('competitiveIntent')),
+        'commander_tier': int(data.get('details').get('powerLevel').get('ratings').get('commanderTier')),
+        'card_quality': float(data.get('details').get('powerLevel').get('ratings').get('cardQuality')),
+        'adjustments': data.get('details').get('powerLevel').get('biasExplanation').get('adjustments'),
+        'flags': data.get('details').get('powerLevel').get('biasExplanation').get('flags'),
     }
     return CommanderSaltData(**proc_data)
 

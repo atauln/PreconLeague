@@ -115,7 +115,83 @@ async def trigger_create_snapshot(deck_id: int):
         archetype_minor=commandersalt_data.archetype_minor,
         archetype_major=commandersalt_data.archetype_major,
         price_usd=commandersalt_data.price_usd,
-        week_of_league=CURRENT_WEEK_NUMBER
+        week_of_league=CURRENT_WEEK_NUMBER,
+        mana_fixing_score=commandersalt_data.mana_fixing_score,
+        competitive_intent=commandersalt_data.competitive_intent,
+        commander_tier=commandersalt_data.commander_tier,
+        card_quality=commandersalt_data.card_quality
+    )
+
+    # Batch card handling: expand card IDs to repeat per-card quantities
+    # so the DB will receive one row per copy.
+    card_ids = []
+    for card in proc_deck.library:
+        cid = getattr(card, 'id', None)
+        if cid is None:
+            continue
+        qty = getattr(card, 'quantity', None)
+        qty = qty if isinstance(qty, int) and qty > 0 else 1
+        for _ in range(qty):
+            card_ids.append(cid)
+    # Query existing cards in one go
+    existing_cards = await get_cards_by_ids(card_ids)
+    existing_ids = {c.get('oracle_card_id') for c in existing_cards}
+
+    # Prepare list of missing cards (oracle_card_id, card_name)
+    missing_cards = [ (card.id, card.name) for card in proc_deck.library if card.id not in existing_ids ]
+    if missing_cards:
+        await create_cards_bulk(missing_cards)
+
+    # Associate all library cards with the snapshot in bulk (card_ids may contain duplicates)
+    await associate_cards_with_snapshot_bulk(snapshot_id, card_ids)
+    
+    if snapshot_id:
+        return {"snapshot_id": snapshot_id, "deck_id": deck_id}
+    raise HTTPException(status_code=500, detail="Failed to create snapshot")
+
+@router.post("/create_snapshot/{deck_id}/from_custom_source")
+async def trigger_create_snapshot_from_custom_source(deck_id: int, source_deck_url: str):
+    deck = await get_deck_by_id(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    if "moxfield.com" in source_deck_url:
+        proc_deck = fetch_moxfield_deck(source_deck_url)
+    elif "archidekt.com" in source_deck_url:
+        proc_deck = fetch_archidekt_deck(source_deck_url)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid deck source URL")
+    commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
+
+    # For simplicity, let's assume the first commander is the main one
+    if not proc_deck.commanders:
+        raise HTTPException(status_code=400, detail="No commanders found in the deck")
+    commander = proc_deck.commanders[0]
+
+    # Ensure commander card exists in `cards` table because `snapshots.commander_id` is FK to cards(oracle_card_id)
+    existing_commander = await get_card_by_id(commander.id)
+    if not existing_commander:
+        await create_card(commander.id, commander.name)
+
+    snapshot_id = await create_snapshot(
+        deck_id=deck_id,
+        commander_id=commander.id,
+        salt_rating=commandersalt_data.salt_rating,
+        synergy_rating=commandersalt_data.synergy_rating,
+        power_level_rating=commandersalt_data.power_level_rating,
+        threat_rating=commandersalt_data.threat_rating,
+        bracket_rating=commandersalt_data.bracket_rating,
+        overall_rating=commandersalt_data.overall_rating,
+        manabase_score=commandersalt_data.manabase_score,
+        power_level_display_value=commandersalt_data.power_level_display_value,
+        combo_rating=commandersalt_data.combo_rating,
+        archetype_minor=commandersalt_data.archetype_minor,
+        archetype_major=commandersalt_data.archetype_major,
+        price_usd=commandersalt_data.price_usd,
+        week_of_league=CURRENT_WEEK_NUMBER,
+        mana_fixing_score=commandersalt_data.mana_fixing_score,
+        competitive_intent=commandersalt_data.competitive_intent,
+        commander_tier=commandersalt_data.commander_tier,
+        card_quality=commandersalt_data.card_quality
     )
 
     # Batch card handling: expand card IDs to repeat per-card quantities

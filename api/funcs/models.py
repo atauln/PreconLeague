@@ -26,29 +26,14 @@ class Deck:
                 f"commanders={self.commanders}, source='{self.source}')")
 
 class CommanderSaltData:
-    """
-    based on this:
-    proc_data = {
-        'salt_rating': float(data.get('saltRating')),
-        'synergy_rating': float(data.get('synergyRating')),
-        'power_level_rating': float(data.get('powerLevelRating')),
-        'threat_rating': float(data.get('threatRating')),
-        'bracket_rating': float(data.get('bracketRating')),
-        'overall_rating': float(data.get('overallRating')),
-        'manabase_score': float(data.get('details').get('manabase').get('score')),
-        'power_level_display_value': int(data.get('powerLevelDisplayValue')),
-        'combo_rating': float(data.get('comboRating')),
-        'archetype_minor': data.get('archetypeMinor'),
-        'archetype_major': data.get('archetypeMajor'),
-        'price_usd': float(data.get('price').get('usd')),
-    }
-    """
 
     def __init__(self, salt_rating: float, synergy_rating: float, power_level_rating: float,
                  threat_rating: float, bracket_rating: float, overall_rating: float,
-                    manabase_score: float, power_level_display_value: int,
-                    combo_rating: float, archetype_minor: str, archetype_major: str,
-                    price_usd: float):
+                 manabase_score: float, power_level_display_value: int,
+                 combo_rating: float, archetype_minor: str, archetype_major: str,
+                 price_usd: float, mana_fixing_score: float, salt_scoring: dict,
+                 competitive_intent: int, commander_tier: int, card_quality: float,
+                 adjustments: dict, flags: dict):
         self.salt_rating = salt_rating
         self.synergy_rating = synergy_rating
         self.power_level_rating = power_level_rating
@@ -61,6 +46,13 @@ class CommanderSaltData:
         self.archetype_minor = archetype_minor
         self.archetype_major = archetype_major
         self.price_usd = price_usd
+        self.mana_fixing_score = mana_fixing_score
+        self.salt_scoring = salt_scoring
+        self.competitive_intent = competitive_intent
+        self.commander_tier = commander_tier
+        self.card_quality = card_quality
+        self.adjustments = adjustments
+        self.flags = flags
     
     def __repr__(self):
         return (f"CommanderSaltData(salt_rating={self.salt_rating}, synergy_rating={self.synergy_rating}, "
@@ -68,7 +60,10 @@ class CommanderSaltData:
                 f"bracket_rating={self.bracket_rating}, overall_rating={self.overall_rating}, "
                 f"manabase_score={self.manabase_score}, power_level_display_value={self.power_level_display_value}, "
                 f"combo_rating={self.combo_rating}, archetype_minor='{self.archetype_minor}', "
-                f"archetype_major='{self.archetype_major}', price_usd={self.price_usd})")
+                f"archetype_major='{self.archetype_major}', price_usd={self.price_usd}, "
+                f"mana_fixing_score={self.mana_fixing_score}, salt_scoring={self.salt_scoring}, "
+                f"competitive_intent={self.competitive_intent}, commander_tier={self.commander_tier}, "
+                f"card_quality={self.card_quality}, adjustments={self.adjustments}, flags={self.flags})")
 
 
 

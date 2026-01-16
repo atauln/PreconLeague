@@ -52,7 +52,11 @@ CREATE TABLE snapshots (
     archetype_minor TEXT,
     archetype_major TEXT,
     price_usd DECIMAL,
-    week_of_league INTEGER
+    week_of_league INTEGER,
+    mana_fixing_score DECIMAL,
+    competitive_intent DECIMAL,
+    commander_tier DECIMAL,
+    card_quality DECIMAL
 );
 
 CREATE TABLE library_cards (

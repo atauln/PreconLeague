@@ -25,6 +25,7 @@ import {
   AccordionDetails,
   Tooltip,
   Link as MuiLink,
+  Tab,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
@@ -56,6 +57,10 @@ interface Snapshot {
   archetype_major: string
   price_usd: number
   week_of_league: number
+  mana_fixing_score: number
+  competitive_intent: number
+  commander_tier: number
+  card_quality: number
 }
 
 const remoteApi = (import.meta.env.VITE_API_URL as string) || ''
@@ -529,6 +534,22 @@ export default function DeckEditor() {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
                   <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'manabase_score', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Mana Fixing Score</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'mana_fixing_score', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Competitive Intent</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'competitive_intent', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Commander Tier</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'commander_tier', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Card Quality</TableCell>
+                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'card_quality', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
