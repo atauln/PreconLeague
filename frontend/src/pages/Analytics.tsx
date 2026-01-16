@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react'
+import { useTheme } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import {
   Container,
@@ -63,7 +64,7 @@ function LineChart({
   data,
   width = 700,
   height = 200,
-  stroke = '#1976d2',
+  stroke,
 }: {
   data: { x: string; y: number | null }[]
   width?: number
@@ -71,6 +72,9 @@ function LineChart({
   stroke?: string
 }) {
   if (!data || data.length === 0) return <Box sx={{ p: 2 }}>No data</Box>
+
+  const theme = useTheme()
+  const resolvedStroke = stroke ?? (theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main)
 
   const containerRef = useRef<HTMLDivElement | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -200,19 +204,19 @@ function LineChart({
       <svg ref={svgRef} width="100%" height={height} role="img" aria-label="line chart" onPointerMove={handlePointerMove} onPointerLeave={handlePointerLeave}>
         <defs>
           <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={stroke} stopOpacity={0.18} />
-            <stop offset="100%" stopColor={stroke} stopOpacity={0.02} />
+            <stop offset="0%" stopColor={resolvedStroke} stopOpacity={0.18} />
+            <stop offset="100%" stopColor={resolvedStroke} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <rect x={0} y={0} width={actualWidth} height={height} fill="#fff" />
+        <rect x={0} y={0} width={actualWidth} height={height} fill={theme.palette.background.paper} />
         {/* grid lines + y labels (respect vertical margins) */}
         {tickValues.map((tv, idx) => {
           const t = idx / (ticks - 1)
           const y = topMargin + t * chartInnerHeight
           return (
             <g key={idx}>
-              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke="#f0f2f5" strokeDasharray="3 3" />
-              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill="#6b7280">{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
+              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke={theme.palette.divider} strokeDasharray="3 3" />
+              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill={theme.palette.text.secondary}>{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
             </g>
           )
         })}
@@ -221,12 +225,12 @@ function LineChart({
         {smoothPath && <path d={`${smoothPath} L ${leftMargin + chartWidth} ${topMargin + chartInnerHeight} L ${leftMargin} ${topMargin + chartInnerHeight} Z`} fill="url(#areaGrad)" />}
 
         {/* path */}
-        {smoothPath && <path d={smoothPath} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
+        {smoothPath && <path d={smoothPath} fill="none" stroke={resolvedStroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
 
         {/* hover marker + highlighted point */}
         {hoverIdx !== null && hoverIdx !== undefined && hoverIdx >= 0 && hoverIdx < data.length && (
           <g>
-            <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.08)" strokeWidth={1} />
+            <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke={theme.palette.divider} strokeWidth={1} />
           </g>
         )}
 
@@ -239,7 +243,7 @@ function LineChart({
           const y = py(v)
           const isHover = hoverIdx === i
           return (
-            <circle key={i} cx={x} cy={y} r={isHover ? 5 : 3} fill={stroke} stroke={isHover ? '#fff' : 'none'} strokeWidth={isHover ? 1.5 : 0} style={{ transition: 'r .08s' }} />
+            <circle key={i} cx={x} cy={y} r={isHover ? 5 : 3} fill={resolvedStroke} stroke={isHover ? theme.palette.background.paper : 'none'} strokeWidth={isHover ? 1.5 : 0} style={{ transition: 'r .08s' }} />
           )
         })}
 
@@ -250,7 +254,7 @@ function LineChart({
           const x = px(i)
           const y = topMargin + chartInnerHeight + 16
           return (
-            <text key={d.x} x={x} y={y} textAnchor={i === data.length - 1 ? 'end' : 'middle'} fontSize={11} fill="#6b7280" transform={`rotate(-35, ${x}, ${y})`}>
+            <text key={d.x} x={x} y={y} textAnchor={i === data.length - 1 ? 'end' : 'middle'} fontSize={11} fill={theme.palette.text.secondary} transform={`rotate(-35, ${x}, ${y})`}>
               {d.x}
             </text>
           )
@@ -258,7 +262,7 @@ function LineChart({
       </svg>
 
       {/* tooltip */}
-      {hoverIdx !== null && tooltipPos && (
+          {hoverIdx !== null && tooltipPos && (
         <Box sx={{ position: 'absolute', pointerEvents: 'none', zIndex: 10 }} style={{ left: tooltipPos.left + 8, top: Math.max(4, tooltipPos.top - 36) }}>
           <Paper sx={{ p: 0.5, minWidth: 110, bgcolor: 'background.paper' }} elevation={4}>
             <Box sx={{ px: 1 }}>
@@ -286,7 +290,7 @@ function MultiLineChart({
   startYZero?: boolean
 }) {
   if (!series || series.length === 0) return <Box sx={{ p: 2 }}>No data</Box>
-
+  const theme = useTheme()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [actualWidth, setActualWidth] = useState<number>(width)
@@ -318,7 +322,7 @@ function MultiLineChart({
   const aligned = series.map((s, _) => {
     const map = new Map(s.data.map((d) => [d.x, d]))
     return { name: s.name, data: allKeys.map((k) => ({ x: k, y: map.get(k)?.y ?? null })), stroke: s.stroke }
-  })
+  });
 
   // flatten for y domain
   const ys = aligned.flatMap((s) => s.data.map((d) => (d.y === null || d.y === undefined ? NaN : d.y)))
@@ -339,26 +343,6 @@ function MultiLineChart({
   const py = (v: number) => (topMargin + (1 - (v - y0) / (y1 - y0)) * chartInnerHeight)
 
   const colors = ['#1976d2', '#9c27b0', '#ff5722', '#2e7d32', '#0277bd', '#d32f2f', '#6a1b9a', '#f9a825']
-
-  // prepare average series label position (if present)
-  const avgLabel = (() => {
-    const s = aligned.find((x) => x.name === 'Average')
-    if (!s) return null
-    for (let i = s.data.length - 1; i >= 0; i--) {
-      const v = s.data[i]?.y
-      if (v === null || v === undefined) continue
-      const n = Number(v)
-      if (!Number.isFinite(n)) continue
-      const x = px(i)
-      const y = py(n)
-      const color = s.stroke ?? colors[aligned.indexOf(s) % colors.length]
-      // clamp label inside chart area
-      const labelX = Math.min(Math.max(x + 8, leftMargin + 8), leftMargin + chartWidth - 76)
-      const labelY = Math.max(topMargin + 12, y - 8)
-      return { x: labelX, y: labelY, color }
-    }
-    return null
-  })()
 
   useEffect(() => {
     const updateWidth = () => {
@@ -414,7 +398,7 @@ function MultiLineChart({
             <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000" floodOpacity="0.06" />
           </filter>
         </defs>
-        <rect x={0} y={0} width={actualWidth} height={height} fill="#fff" />
+        <rect x={0} y={0} width={actualWidth} height={height} fill={theme.palette.background.paper} />
         {/* grid lines + y labels */}
         {Array.from({ length: 5 }).map((_, idx) => {
           const t = idx / 4
@@ -422,8 +406,8 @@ function MultiLineChart({
           const tv = y1 - t * (y1 - y0)
           return (
             <g key={idx}>
-              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke="#f0f2f5" strokeDasharray="3 3" />
-              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill="#6b7280">{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
+              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke={theme.palette.divider} strokeDasharray="3 3" />
+              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill={theme.palette.text.secondary}>{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
             </g>
           )
         })}
@@ -442,21 +426,14 @@ function MultiLineChart({
             })
             .filter(Boolean)
             .join(' ')
-          // use a distinct, semi-transparent color for the Average series
-          let color = s.stroke ?? colors[si % colors.length]
-          if (isAverage) {
-            color = 'rgba(11,132,255,0.85)'
-          }
+          const color = s.stroke ?? colors[si % colors.length]
           const strokeWidth = isAverage ? 3.5 : 2.5
           const dash = isAverage ? '6 3' : undefined
-          const strokeProps: any = { stroke: color, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' }
-          if (dash) strokeProps.strokeDasharray = dash
-          if (isAverage) strokeProps.style = { filter: 'url(#soft-shadow)', mixBlendMode: 'normal', strokeOpacity: 0.85 }
-          return <path key={si} d={path} fill="none" {...strokeProps} />
+          return <path key={si} d={path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} style={isAverage ? { filter: 'url(#soft-shadow)', mixBlendMode: 'normal' } : undefined} />
         })}
         {/* vertical guide line on hover */}
         {hoverIdx !== null && hoverIdx !== undefined && (
-          <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.08)" strokeWidth={1} />
+          <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke={theme.palette.divider} strokeWidth={1} />
         )}
         {/* points (for hover target) - skip points for Average series for clarity */}
         {aligned.map((s, si) => {
@@ -469,7 +446,7 @@ function MultiLineChart({
             const x = px(i)
             const y = py(v)
             const isHover = hoverIdx === i
-            return <circle key={`${si}-${i}`} cx={x} cy={y} r={isHover ? 5 : 3} fill={color} stroke={isHover ? '#fff' : 'none'} strokeWidth={isHover ? 1.5 : 0} />
+            return <circle key={`${si}-${i}`} cx={x} cy={y} r={isHover ? 5 : 3} fill={color} stroke={isHover ? theme.palette.background.paper : 'none'} strokeWidth={isHover ? 1.5 : 0} />
           })
         })}
 
@@ -480,19 +457,11 @@ function MultiLineChart({
           const x = px(i)
           const y = topMargin + chartInnerHeight + 18
           return (
-            <text key={k} x={x} y={y} textAnchor={i === allKeys.length - 1 ? 'end' : 'middle'} fontSize={11} fill="#6b7280" transform={`rotate(-35, ${x}, ${y})`}>
+            <text key={k} x={x} y={y} textAnchor={i === allKeys.length - 1 ? 'end' : 'middle'} fontSize={11} fill={theme.palette.text.secondary} transform={`rotate(-35, ${x}, ${y})`}>
               {k}
             </text>
           )
         })}
-
-        {/* Average label box (renders near last average point) */}
-        {avgLabel && (
-          <g>
-            <rect x={avgLabel.x - 6} y={avgLabel.y - 14} width={68} height={18} rx={4} fill="#fff" opacity={0.92} stroke="rgba(0,0,0,0.06)" />
-            <text x={avgLabel.x} y={avgLabel.y} fontSize={12} fontWeight={700} fill={avgLabel.color} opacity={0.95}>Average</text>
-          </g>
-        )}
       </svg>
 
       {/* legend (outside svg) - ordered by current hover value (or latest value when not hovering) */}
@@ -935,7 +904,7 @@ export default function Analytics() {
                         (showDeckLines ? allDecksSnapshots.map((d, _) => ({
                           name: d.deck_name,
                           data: d.weekly.map((s) => ({ x: getWeekKey(s), y: (s as any)[metrics[metricIndex].id] ?? null })),
-                          stroke: undefined,
+                          stroke: undefined as string | undefined,
                         })) : [])
                         // plus the average series (append)
                         .concat([{ name: 'Average', data: allDecksAverages.averagesByMetric.get(metrics[metricIndex].id) ?? [], stroke: '#111827' }])

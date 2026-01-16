@@ -58,3 +58,30 @@ body {
   color: #fff;
 }
 
+/* Dark theme overrides (applied when document.documentElement has data-theme="dark") */
+[data-theme="dark"] body {
+  background-color: #071124;
+  color: #e6eef8;
+}
+
+[data-theme="dark"] .card {
+  background-color: #0b1220;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+
+[data-theme="dark"] .input {
+  background-color: #06101a;
+  border: 1px solid #122235;
+  color: #e6eef8;
+}
+
+[data-theme="dark"] .btn {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+/* small transition for theme changes */
+html, body, .card, .btn, .input {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
