@@ -24,8 +24,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Tooltip,
-  Link as MuiLink,
-  Tab,
+  Link as MuiLink
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 
