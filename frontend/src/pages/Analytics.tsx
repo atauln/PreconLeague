@@ -529,6 +529,7 @@ function MultiLineChart({
 }
 
 export default function Analytics() {
+  const theme = useTheme()
   const [decks, setDecks] = useState<Deck[]>([])
   const [loadingDecks, setLoadingDecks] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -873,9 +874,15 @@ export default function Analytics() {
           {selectedDeckId === -1 ? (
             <Paper sx={{ mb: 2, p: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-                <Box>
-                  <Typography variant="h6">All Decks — Metric view</Typography>
-                  <Typography variant="body2" color="text.secondary">Shows the newest snapshot per week for each deck — one metric at a time.</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                    <Typography variant="h6">All Decks — Metric view</Typography>
+                    <Typography variant="body2" color="text.secondary">Shows the newest snapshot per week for each deck — one metric at a time.</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                    <Checkbox size="small" checked={showDeckLines} onChange={(e) => setShowDeckLines(e.target.checked)} />
+                    <Typography variant="body2">Show deck lines</Typography>
+                  </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                   <Tabs value={metricIndex} onChange={(_, v) => setMetricIndex(v)} variant="scrollable" scrollButtons="auto" aria-label="metric tabs">
@@ -883,10 +890,6 @@ export default function Analytics() {
                       <Tab key={m.id} label={m.label} value={idx} />
                     ))}
                   </Tabs>
-                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                    <Checkbox size="small" checked={showDeckLines} onChange={(e) => setShowDeckLines(e.target.checked)} />
-                    <Typography variant="body2">Show deck lines</Typography>
-                  </Box>
                 </Box>
                 </Box>
 
@@ -907,7 +910,13 @@ export default function Analytics() {
                           stroke: undefined as string | undefined,
                         })) : [])
                         // plus the average series (append)
-                        .concat([{ name: 'Average', data: allDecksAverages.averagesByMetric.get(metrics[metricIndex].id) ?? [], stroke: '#111827' }])
+                        .concat([
+                          {
+                            name: 'Average',
+                            data: allDecksAverages.averagesByMetric.get(metrics[metricIndex].id) ?? [],
+                            stroke: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+                          },
+                        ])
                       }
                       height={520}
                     />
