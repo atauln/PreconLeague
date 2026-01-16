@@ -109,6 +109,30 @@ function LineChart({
     .filter(Boolean)
     .join(' ')
 
+  // create a smoothed path (simple cubic smoothing) for nicer visuals
+  const smoothPath = (() => {
+    if (!path) return ''
+    const pts = data
+      .map((pt, i) => {
+        if (pt.y === null || pt.y === undefined) return null
+        const v = Number(pt.y)
+        if (!Number.isFinite(v)) return null
+        return { x: px(i), y: py(v) }
+      })
+      .filter(Boolean) as { x: number; y: number }[]
+
+    if (pts.length <= 2) return path
+    let d = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i - 1]
+      const cur = pts[i]
+      const midX = ((prev.x + cur.x) / 2).toFixed(2)
+      d += ` Q ${prev.x.toFixed(2)} ${prev.y.toFixed(2)} ${midX} ${((prev.y + cur.y) / 2).toFixed(2)}`
+      d += ` T ${cur.x.toFixed(2)} ${cur.y.toFixed(2)}`
+    }
+    return d
+  })()
+
   // Y axis ticks (5 ticks)
   const ticks = 5
   const tickValues = Array.from({ length: ticks }, (_, i) => y0 + ((y1 - y0) * (ticks - 1 - i)) / (ticks - 1))
@@ -174,6 +198,12 @@ function LineChart({
   return (
     <Box sx={{ overflow: 'visible', p: 2, position: 'relative' }} ref={containerRef}>
       <svg ref={svgRef} width="100%" height={height} role="img" aria-label="line chart" onPointerMove={handlePointerMove} onPointerLeave={handlePointerLeave}>
+        <defs>
+          <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity={0.18} />
+            <stop offset="100%" stopColor={stroke} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
         <rect x={0} y={0} width={actualWidth} height={height} fill="#fff" />
         {/* grid lines + y labels (respect vertical margins) */}
         {tickValues.map((tv, idx) => {
@@ -181,18 +211,22 @@ function LineChart({
           const y = topMargin + t * chartInnerHeight
           return (
             <g key={idx}>
-              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke="#eee" />
-              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill="#666">{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
+              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke="#f0f2f5" strokeDasharray="3 3" />
+              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill="#6b7280">{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
             </g>
           )
         })}
+
+        {/* area under line */}
+        {smoothPath && <path d={`${smoothPath} L ${leftMargin + chartWidth} ${topMargin + chartInnerHeight} L ${leftMargin} ${topMargin + chartInnerHeight} Z`} fill="url(#areaGrad)" />}
+
         {/* path */}
-        {path && <path d={path} fill="none" stroke={stroke} strokeWidth={2} />}
+        {smoothPath && <path d={smoothPath} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />}
 
         {/* hover marker + highlighted point */}
         {hoverIdx !== null && hoverIdx !== undefined && hoverIdx >= 0 && hoverIdx < data.length && (
           <g>
-            <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.12)" strokeWidth={1} />
+            <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.08)" strokeWidth={1} />
           </g>
         )}
 
@@ -205,28 +239,36 @@ function LineChart({
           const y = py(v)
           const isHover = hoverIdx === i
           return (
-            <circle key={i} cx={x} cy={y} r={isHover ? 5 : 3} fill={stroke} stroke={isHover ? '#fff' : 'none'} strokeWidth={isHover ? 1.5 : 0} />
+            <circle key={i} cx={x} cy={y} r={isHover ? 5 : 3} fill={stroke} stroke={isHover ? '#fff' : 'none'} strokeWidth={isHover ? 1.5 : 0} style={{ transition: 'r .08s' }} />
+          )
+        })}
+
+        {/* x labels (sparse to avoid clutter) */}
+        {data.map((d, i) => {
+          const showEvery = Math.ceil(data.length / 6) || 1
+          if (i % showEvery !== 0 && i !== data.length - 1) return null
+          const x = px(i)
+          const y = topMargin + chartInnerHeight + 16
+          return (
+            <text key={d.x} x={x} y={y} textAnchor={i === data.length - 1 ? 'end' : 'middle'} fontSize={11} fill="#6b7280" transform={`rotate(-35, ${x}, ${y})`}>
+              {d.x}
+            </text>
           )
         })}
       </svg>
 
       {/* tooltip */}
       {hoverIdx !== null && tooltipPos && (
-        <Box sx={{ position: 'absolute', pointerEvents: 'none', zIndex: 10 }} style={{ left: tooltipPos.left + 8, top: Math.max(4, tooltipPos.top - 28) }}>
-          <Paper sx={{ p: 0.5, minWidth: 88 }} elevation={3}>
+        <Box sx={{ position: 'absolute', pointerEvents: 'none', zIndex: 10 }} style={{ left: tooltipPos.left + 8, top: Math.max(4, tooltipPos.top - 36) }}>
+          <Paper sx={{ p: 0.5, minWidth: 110, bgcolor: 'background.paper' }} elevation={4}>
             <Box sx={{ px: 1 }}>
-                <Typography variant="caption">{data[hoverIdx].x}</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>{data[hoverIdx].x}</Typography>
                 <Typography variant="body2">{data[hoverIdx].y === null || data[hoverIdx].y === undefined ? '—' : new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(Number(data[hoverIdx].y))}</Typography>
             </Box>
           </Paper>
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', gap: 2, mt: 1, flexWrap: 'wrap' }}>
-        {data.map((d) => (
-          <Typography key={d.x} variant="caption">{d.x}</Typography>
-        ))}
-      </Box>
     </Box>
   )
 }
@@ -347,6 +389,11 @@ function MultiLineChart({
   return (
     <Box sx={{ overflow: 'visible', p: 2, position: 'relative' }} ref={containerRef}>
       <svg ref={svgRef} width="100%" height={height} role="img" aria-label="multi line chart" onPointerMove={handlePointerMove} onPointerLeave={handlePointerLeave}>
+        <defs>
+          <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000" floodOpacity="0.06" />
+          </filter>
+        </defs>
         <rect x={0} y={0} width={actualWidth} height={height} fill="#fff" />
         {/* grid lines + y labels */}
         {Array.from({ length: 5 }).map((_, idx) => {
@@ -355,8 +402,8 @@ function MultiLineChart({
           const tv = y1 - t * (y1 - y0)
           return (
             <g key={idx}>
-              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke="#eee" />
-              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill="#666">{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
+              <line x1={leftMargin} x2={leftMargin + chartWidth} y1={y} y2={y} stroke="#f0f2f5" strokeDasharray="3 3" />
+              <text x={leftMargin - 8} y={y + 4} textAnchor="end" fontSize={12} fill="#6b7280">{new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(tv)}</text>
             </g>
           )
         })}
@@ -375,11 +422,11 @@ function MultiLineChart({
             .filter(Boolean)
             .join(' ')
           const color = s.stroke ?? colors[si % colors.length]
-          return <path key={si} d={path} fill="none" stroke={color} strokeWidth={2} />
+          return <path key={si} d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
         })}
         {/* vertical guide line on hover */}
         {hoverIdx !== null && hoverIdx !== undefined && (
-          <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.12)" strokeWidth={1} />
+          <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.08)" strokeWidth={1} />
         )}
         {/* points (for hover target) */}
         {aligned.map((s, si) => {
@@ -394,10 +441,23 @@ function MultiLineChart({
             return <circle key={`${si}-${i}`} cx={x} cy={y} r={isHover ? 5 : 3} fill={color} stroke={isHover ? '#fff' : 'none'} strokeWidth={isHover ? 1.5 : 0} />
           })
         })}
+
+        {/* x axis labels, sparse and rotated */}
+        {allKeys.map((k, i) => {
+          const showEvery = Math.ceil(allKeys.length / 8) || 1
+          if (i % showEvery !== 0 && i !== allKeys.length - 1) return null
+          const x = px(i)
+          const y = topMargin + chartInnerHeight + 18
+          return (
+            <text key={k} x={x} y={y} textAnchor={i === allKeys.length - 1 ? 'end' : 'middle'} fontSize={11} fill="#6b7280" transform={`rotate(-35, ${x}, ${y})`}>
+              {k}
+            </text>
+          )
+        })}
       </svg>
 
       {/* legend (outside svg) - ordered by current hover value (or latest value when not hovering) */}
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1, alignItems: 'center' }}>
         {(() => {
           const valueAt = (s: typeof aligned[0]) => {
             if (hoverIdx !== null && hoverIdx !== undefined) {
@@ -422,10 +482,10 @@ function MultiLineChart({
           return order.map((si) => {
             const s = aligned[si]
             return (
-              <Box key={si} sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1, borderRight: '1px solid #eee' }}>
-                <Box sx={{ width: 12, height: 8, backgroundColor: s.stroke ?? colors[si % colors.length] }} />
+              <Paper key={si} variant="outlined" sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.5, pr: 1, bgcolor: 'background.paper' }}>
+                <Box sx={{ width: 12, height: 12, borderRadius: 1, backgroundColor: s.stroke ?? colors[si % colors.length] }} />
                 <Typography variant="caption">{s.name} {(() => { const v = valueAt(s); return Number.isFinite(v) ? `— ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(v)}` : '' })()}</Typography>
-              </Box>
+              </Paper>
             )
           })
         })()}
@@ -758,6 +818,7 @@ export default function Analytics() {
                         stroke: undefined,
                       }))}
                       height={520}
+                      
                     />
                   )}
                 </Box>
