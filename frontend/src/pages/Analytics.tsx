@@ -340,6 +340,26 @@ function MultiLineChart({
 
   const colors = ['#1976d2', '#9c27b0', '#ff5722', '#2e7d32', '#0277bd', '#d32f2f', '#6a1b9a', '#f9a825']
 
+  // prepare average series label position (if present)
+  const avgLabel = (() => {
+    const s = aligned.find((x) => x.name === 'Average')
+    if (!s) return null
+    for (let i = s.data.length - 1; i >= 0; i--) {
+      const v = s.data[i]?.y
+      if (v === null || v === undefined) continue
+      const n = Number(v)
+      if (!Number.isFinite(n)) continue
+      const x = px(i)
+      const y = py(n)
+      const color = s.stroke ?? colors[aligned.indexOf(s) % colors.length]
+      // clamp label inside chart area
+      const labelX = Math.min(Math.max(x + 8, leftMargin + 8), leftMargin + chartWidth - 76)
+      const labelY = Math.max(topMargin + 12, y - 8)
+      return { x: labelX, y: labelY, color }
+    }
+    return null
+  })()
+
   useEffect(() => {
     const updateWidth = () => {
       if (svgRef.current) {
@@ -410,6 +430,7 @@ function MultiLineChart({
 
         {/* series paths */}
         {aligned.map((s, si) => {
+          const isAverage = s.name === 'Average'
           const path = s.data
             .map((pt, i) => {
               if (pt.y === null || pt.y === undefined) return null
@@ -421,17 +442,27 @@ function MultiLineChart({
             })
             .filter(Boolean)
             .join(' ')
-          const color = s.stroke ?? colors[si % colors.length]
-          return <path key={si} d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          // use a distinct, semi-transparent color for the Average series
+          let color = s.stroke ?? colors[si % colors.length]
+          if (isAverage) {
+            color = 'rgba(11,132,255,0.85)'
+          }
+          const strokeWidth = isAverage ? 3.5 : 2.5
+          const dash = isAverage ? '6 3' : undefined
+          const strokeProps: any = { stroke: color, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' }
+          if (dash) strokeProps.strokeDasharray = dash
+          if (isAverage) strokeProps.style = { filter: 'url(#soft-shadow)', mixBlendMode: 'normal', strokeOpacity: 0.85 }
+          return <path key={si} d={path} fill="none" {...strokeProps} />
         })}
         {/* vertical guide line on hover */}
         {hoverIdx !== null && hoverIdx !== undefined && (
           <line x1={px(hoverIdx)} x2={px(hoverIdx)} y1={topMargin} y2={topMargin + chartInnerHeight} stroke="rgba(0,0,0,0.08)" strokeWidth={1} />
         )}
-        {/* points (for hover target) */}
+        {/* points (for hover target) - skip points for Average series for clarity */}
         {aligned.map((s, si) => {
           const color = s.stroke ?? colors[si % colors.length]
-          return s.data.map((pt, i) => {
+          const isAverage = s.name === 'Average'
+          return isAverage ? null : s.data.map((pt, i) => {
             if (pt.y === null || pt.y === undefined) return null
             const v = Number(pt.y)
             if (!Number.isFinite(v)) return null
@@ -454,6 +485,14 @@ function MultiLineChart({
             </text>
           )
         })}
+
+        {/* Average label box (renders near last average point) */}
+        {avgLabel && (
+          <g>
+            <rect x={avgLabel.x - 6} y={avgLabel.y - 14} width={68} height={18} rx={4} fill="#fff" opacity={0.92} stroke="rgba(0,0,0,0.06)" />
+            <text x={avgLabel.x} y={avgLabel.y} fontSize={12} fontWeight={700} fill={avgLabel.color} opacity={0.95}>Average</text>
+          </g>
+        )}
       </svg>
 
       {/* legend (outside svg) - ordered by current hover value (or latest value when not hovering) */}
@@ -481,10 +520,11 @@ function MultiLineChart({
 
           return order.map((si) => {
             const s = aligned[si]
+            const isAverage = s.name === 'Average'
             return (
-              <Paper key={si} variant="outlined" sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.5, pr: 1, bgcolor: 'background.paper' }}>
-                <Box sx={{ width: 12, height: 12, borderRadius: 1, backgroundColor: s.stroke ?? colors[si % colors.length] }} />
-                <Typography variant="caption">{s.name} {(() => { const v = valueAt(s); return Number.isFinite(v) ? `— ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(v)}` : '' })()}</Typography>
+              <Paper key={si} variant="outlined" sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 0.5, pr: 1, bgcolor: 'background.paper', borderColor: isAverage ? 'primary.light' : undefined }}>
+                <Box sx={{ width: isAverage ? 14 : 12, height: isAverage ? 14 : 12, borderRadius: 1, backgroundColor: s.stroke ?? colors[si % colors.length], border: isAverage ? '2px solid rgba(0,0,0,0.06)' : 'none' }} />
+                <Typography variant="caption" sx={isAverage ? { fontWeight: 700 } : undefined}>{s.name} {(() => { const v = valueAt(s); return Number.isFinite(v) ? `— ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(v)}` : '' })()}</Typography>
               </Paper>
             )
           })
@@ -530,6 +570,7 @@ export default function Analytics() {
   const [allDecksSnapshots, setAllDecksSnapshots] = useState<Array<{ deck_id: number; deck_name: string; weekly: Snapshot[] }>>([])
   const [loadingAllDecks, setLoadingAllDecks] = useState(false)
   const [metricIndex, setMetricIndex] = useState(0)
+  const [showDeckLines, setShowDeckLines] = useState(true)
 
   const [showOverall, setShowOverall] = useState(true)
   const [showBracket, setShowBracket] = useState(true)
@@ -696,6 +737,82 @@ export default function Analytics() {
     { id: 'card_quality', label: 'Card Quality' },
   ]
 
+  // For the "All Decks" view: compute per-week averages across decks for each metric
+  const allDecksAverages = useMemo(() => {
+    if (!allDecksSnapshots || allDecksSnapshots.length === 0) return { weeklyKeys: [] as string[], averagesByMetric: new Map<string, { x: string; y: number | null }[]>() , latestByMetric: new Map<string, number>() }
+
+    // collect all week keys
+    const keysSet = new Set<string>()
+    for (const d of allDecksSnapshots) {
+      for (const s of d.weekly) keysSet.add(getWeekKey(s))
+    }
+    const keys = Array.from(keysSet)
+
+    const parseKey = (k: string) => {
+      if (k.startsWith('W')) return { type: 'week', value: Number(k.slice(1)) }
+      const d = Date.parse(k)
+      if (!Number.isNaN(d)) return { type: 'date', value: d }
+      return { type: 'other', value: k }
+    }
+    keys.sort((a, b) => {
+      const pa = parseKey(a)
+      const pb = parseKey(b)
+      if (pa.type === 'week' && pb.type === 'week') return Number(pa.value) - Number(pb.value)
+      if (pa.type === 'week' && pb.type !== 'week') return -1
+      if (pa.type !== 'week' && pb.type === 'week') return 1
+      if (pa.type === 'date' && pb.type === 'date') return Number(pa.value) - Number(pb.value)
+      return String(pa.value).localeCompare(String(pb.value))
+    })
+
+    // map week -> values for each metric
+    const weekBuckets = new Map<string, Array<{ [metric: string]: number }>>()
+    for (const d of allDecksSnapshots) {
+      for (const s of d.weekly) {
+        const k = getWeekKey(s)
+        if (!weekBuckets.has(k)) weekBuckets.set(k, [])
+        const obj: { [metric: string]: number } = {}
+        for (const m of metrics) {
+          const v = (s as any)[m.id]
+          if (v !== null && v !== undefined && Number.isFinite(Number(v))) obj[m.id] = Number(v)
+        }
+        weekBuckets.get(k)!.push(obj)
+      }
+    }
+
+    const averagesByMetric = new Map<string, { x: string; y: number | null }[]>()
+    for (const m of metrics) averagesByMetric.set(m.id, [])
+
+    for (const k of keys) {
+      const arr = weekBuckets.get(k) || []
+      for (const m of metrics) {
+        let sum = 0
+        let count = 0
+        for (const item of arr) {
+          if (item[m.id] !== undefined) {
+            sum += item[m.id]
+            count++
+          }
+        }
+        const avg = count > 0 ? sum / count : null
+        averagesByMetric.get(m.id)!.push({ x: k, y: avg === null ? null : avg })
+      }
+    }
+
+    // latest (most recent) averages for quick display
+    const latestByMetric = new Map<string, number>()
+    const latestKey = keys.length ? keys[keys.length - 1] : null
+    if (latestKey) {
+      for (const m of metrics) {
+        const arr = averagesByMetric.get(m.id) || []
+        const last = arr.length ? arr[arr.length - 1].y : null
+        if (last === null || last === undefined) continue
+        latestByMetric.set(m.id, Number(last))
+      }
+    }
+
+    return { weeklyKeys: keys, averagesByMetric, latestByMetric }
+  }, [allDecksSnapshots, metrics])
+
   return (
     <Container sx={{ py: 4 }} maxWidth="lg">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -797,6 +914,10 @@ export default function Analytics() {
                       <Tab key={m.id} label={m.label} value={idx} />
                     ))}
                   </Tabs>
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                    <Checkbox size="small" checked={showDeckLines} onChange={(e) => setShowDeckLines(e.target.checked)} />
+                    <Typography variant="body2">Show deck lines</Typography>
+                  </Box>
                 </Box>
                 </Box>
 
@@ -809,16 +930,17 @@ export default function Analytics() {
                     <Typography color="text.secondary">No data available for All Decks.</Typography>
                   ) : (
                     <MultiLineChart
-                      series={allDecksSnapshots.map((d, _) => ({
-                        name: d.deck_name,
-                        data: (() => {
-                          // map weekly snapshots to x,y where x is week key (W#)
-                          return d.weekly.map((s) => ({ x: getWeekKey(s), y: (s as any)[metrics[metricIndex].id] ?? null }))
-                        })(),
-                        stroke: undefined,
-                      }))}
+                      series={
+                        // deck series (optional)
+                        (showDeckLines ? allDecksSnapshots.map((d, _) => ({
+                          name: d.deck_name,
+                          data: d.weekly.map((s) => ({ x: getWeekKey(s), y: (s as any)[metrics[metricIndex].id] ?? null })),
+                          stroke: undefined,
+                        })) : [])
+                        // plus the average series (append)
+                        .concat([{ name: 'Average', data: allDecksAverages.averagesByMetric.get(metrics[metricIndex].id) ?? [], stroke: '#111827' }])
+                      }
                       height={520}
-                      
                     />
                   )}
                 </Box>
@@ -902,30 +1024,49 @@ export default function Analytics() {
             </Paper>
           )}
 
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6">Latest snapshot</Typography>
-            {snapshots.length === 0 ? (
-              <Typography color="text.secondary" sx={{ mt: 1 }}>No snapshots available for this deck.</Typography>
-            ) : (
-              <Box sx={{ mt: 1 }}>
-                <Typography>Most recent: {snapshots[snapshots.length - 1].created_at ?? '—'}</Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2, mt: 1 }}>
-                  <Typography>Overall: {formatNumber(snapshots[snapshots.length - 1].overall_rating)}</Typography>
-                  <Typography>Bracket: {formatNumber(snapshots[snapshots.length - 1].bracket_rating)}</Typography>
-                  <Typography>Salt: {formatNumber(snapshots[snapshots.length - 1].salt_rating)}</Typography>
-                  <Typography>Power Level: {formatNumber((snapshots[snapshots.length - 1] as any).power_level_rating)}</Typography>
-                  <Typography>Synergy: {formatNumber((snapshots[snapshots.length - 1] as any).synergy_rating)}</Typography>
-                  <Typography>Threat: {formatNumber((snapshots[snapshots.length - 1] as any).threat_rating)}</Typography>
-                  <Typography>Combo: {formatNumber((snapshots[snapshots.length - 1] as any).combo_rating)}</Typography>
-                  <Typography>Manabase: {formatNumber((snapshots[snapshots.length - 1] as any).manabase_score)}</Typography>
-                  <Typography>Mana Fixing: {formatNumber((snapshots[snapshots.length - 1] as any).mana_fixing_score)}</Typography>
-                  <Typography>Competitive Intent: {formatNumber((snapshots[snapshots.length - 1] as any).competitive_intent)}</Typography>
-                  <Typography>Card Quality: {formatNumber((snapshots[snapshots.length - 1] as any).card_quality)}</Typography>
-                  <Typography>Price: {snapshots[snapshots.length - 1].price_usd ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(snapshots[snapshots.length - 1].price_usd as number) : '—'}</Typography>
+          {/* When All Decks is selected, show average deck stats instead of latest snapshot */}
+          {selectedDeckId === -1 ? (
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6">Average deck stats</Typography>
+              {allDecksSnapshots.length === 0 ? (
+                <Typography color="text.secondary" sx={{ mt: 1 }}>No data available.</Typography>
+              ) : (
+                <Box sx={{ mt: 1 }}>
+                  <Typography>Based on {allDecksSnapshots.length} decks — most recent week: {allDecksAverages.weeklyKeys.length ? allDecksAverages.weeklyKeys[allDecksAverages.weeklyKeys.length - 1] : '—'}</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2, mt: 1 }}>
+                    {metrics.map((m) => (
+                      <Typography key={m.id}>{m.label}: {formatNumber(allDecksAverages.latestByMetric.get(m.id) ?? null)}</Typography>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </Paper>
+              )}
+            </Paper>
+          ) : (
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6">Latest snapshot</Typography>
+              {snapshots.length === 0 ? (
+                <Typography color="text.secondary" sx={{ mt: 1 }}>No snapshots available for this deck.</Typography>
+              ) : (
+                <Box sx={{ mt: 1 }}>
+                  <Typography>Most recent: {snapshots[snapshots.length - 1].created_at ?? '—'}</Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2, mt: 1 }}>
+                    <Typography>Overall: {formatNumber(snapshots[snapshots.length - 1].overall_rating)}</Typography>
+                    <Typography>Bracket: {formatNumber(snapshots[snapshots.length - 1].bracket_rating)}</Typography>
+                    <Typography>Salt: {formatNumber(snapshots[snapshots.length - 1].salt_rating)}</Typography>
+                    <Typography>Power Level: {formatNumber((snapshots[snapshots.length - 1] as any).power_level_rating)}</Typography>
+                    <Typography>Synergy: {formatNumber((snapshots[snapshots.length - 1] as any).synergy_rating)}</Typography>
+                    <Typography>Threat: {formatNumber((snapshots[snapshots.length - 1] as any).threat_rating)}</Typography>
+                    <Typography>Combo: {formatNumber((snapshots[snapshots.length - 1] as any).combo_rating)}</Typography>
+                    <Typography>Manabase: {formatNumber((snapshots[snapshots.length - 1] as any).manabase_score)}</Typography>
+                    <Typography>Mana Fixing: {formatNumber((snapshots[snapshots.length - 1] as any).mana_fixing_score)}</Typography>
+                    <Typography>Competitive Intent: {formatNumber((snapshots[snapshots.length - 1] as any).competitive_intent)}</Typography>
+                    <Typography>Card Quality: {formatNumber((snapshots[snapshots.length - 1] as any).card_quality)}</Typography>
+                    <Typography>Price: {snapshots[snapshots.length - 1].price_usd ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(snapshots[snapshots.length - 1].price_usd as number) : '—'}</Typography>
+                  </Box>
+                </Box>
+              )}
+            </Paper>
+          )}
         </>
       )}
     </Container>
