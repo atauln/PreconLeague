@@ -415,21 +415,44 @@ function MultiLineChart({
         {/* series paths */}
         {aligned.map((s, si) => {
           const isAverage = s.name === 'Average'
-          const path = s.data
+          // build points for path and for optional label positioning
+          const pts = s.data
             .map((pt, i) => {
               if (pt.y === null || pt.y === undefined) return null
               const v = Number(pt.y)
               if (!Number.isFinite(v)) return null
               const x = px(i)
               const y = py(v)
-              return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
+              return { x, y }
             })
-            .filter(Boolean)
-            .join(' ')
+            .filter(Boolean) as { x: number; y: number }[]
+
+          const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ')
           const color = s.stroke ?? colors[si % colors.length]
           const strokeWidth = isAverage ? 3.5 : 2.5
           const dash = isAverage ? '6 3' : undefined
-          return <path key={si} d={path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} style={isAverage ? { filter: 'url(#soft-shadow)', mixBlendMode: 'normal' } : undefined} />
+
+          return (
+            <g key={si}>
+              <path d={path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} style={isAverage ? { filter: 'url(#soft-shadow)', mixBlendMode: 'normal' } : undefined} />
+              {/* label for Average: draw a subtle halo then colored text positioned slightly above the line's end */}
+              {isAverage && pts.length > 0 && (() => {
+                const last = pts[pts.length - 1]
+                const labelX = Math.min(leftMargin + chartWidth - 4, last.x) // ensure label doesn't overflow
+                const labelY = Math.max(8, last.y - 10)
+                return (
+                  <g pointerEvents="none">
+                    <text x={labelX} y={labelY} textAnchor="end" fontSize={12} fill={theme.palette.background.paper} stroke={theme.palette.background.paper} strokeWidth={5} paintOrder="stroke" style={{ fontWeight: 700 }}>
+                      AVERAGE
+                    </text>
+                    <text x={labelX} y={labelY} textAnchor="end" fontSize={12} fill={color} style={{ fontWeight: 700 }}>
+                      AVERAGE
+                    </text>
+                  </g>
+                )
+              })()}
+            </g>
+          )
         })}
         {/* vertical guide line on hover */}
         {hoverIdx !== null && hoverIdx !== undefined && (
