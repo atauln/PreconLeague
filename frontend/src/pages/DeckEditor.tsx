@@ -27,6 +27,7 @@ import {
   Link as MuiLink
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { fetchScryfallCard } from '../utils/scryfall'
 
 interface Deck {
   deck_id: number
@@ -75,7 +76,7 @@ export default function DeckEditor() {
   const [creating, setCreating] = useState(false)
   const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [cardNames, setCardNames] = useState<Record<string, string>>({})
+  const [cardCache, setCardCache] = useState<Record<string, any>>({})
   const cardFetchInFlight = useRef<Set<string>>(new Set())
   const [weekEdits, setWeekEdits] = useState<Record<number, number>>({})
   const [updatingWeek, setUpdatingWeek] = useState<Record<number, boolean>>({})
@@ -104,33 +105,34 @@ export default function DeckEditor() {
     }
   }, [id])
 
-  function fetchCardName(cardId: string): string {
-    if (!cardId) return ''
-    const cached = cardNames[cardId]
+  function fetchCardObject(cardId: string): any | null {
+    if (!cardId) return null
+    const cached = cardCache[cardId]
     if (cached) return cached
 
     // If already fetching this id, return fallback and wait for update
     if (!cardFetchInFlight.current.has(cardId)) {
       cardFetchInFlight.current.add(cardId)
-      fetch(`https://api.scryfall.com/cards/${cardId}`)
-        .then((res) => {
-          if (!res.ok) throw new Error(`Card fetch failed: ${res.status}`)
-          return res.json()
-        })
+      fetchScryfallCard(cardId)
         .then((data) => {
-          const name = (data && data.name) ? data.name : cardId
-          setCardNames((prev) => ({ ...prev, [cardId]: name }))
+          setCardCache((prev) => ({ ...prev, [cardId]: data }))
         })
         .catch(() => {
           // Cache fallback to avoid repeated failing requests
-          setCardNames((prev) => ({ ...prev, [cardId]: cardId }))
+          setCardCache((prev) => ({ ...prev, [cardId]: { name: cardId } }))
         })
         .finally(() => {
           cardFetchInFlight.current.delete(cardId)
         })
     }
 
-    return cardId
+    return null
+  }
+
+  function getCardName(cardId?: string | null) {
+    if (!cardId) return ''
+    const obj = fetchCardObject(cardId)
+    return obj?.name ?? cardCache[cardId]?.name ?? cardId
   }
 
   useEffect(() => {
@@ -388,7 +390,7 @@ export default function DeckEditor() {
           <CardContent>
             <Typography variant="h6">{deck.deck_name}</Typography>
             {snapshots.length > 0 && snapshots[0]?.commander_id && (
-              <Typography variant="body1">{fetchCardName(snapshots[0].commander_id)}</Typography>
+              <Typography variant="body1">{getCardName(snapshots[0].commander_id)}</Typography>
             )}
             <Typography color="text.secondary">Owner: {deck.user_name ?? deck.user_id}</Typography>
             <Typography color="text.secondary">Source: {deck.source}</Typography>
@@ -445,7 +447,7 @@ export default function DeckEditor() {
 
                           <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
                             <Box style={{ paddingRight: '1rem' }}>
-                              <Typography variant="body2">Commander: {fetchCardName(s.commander_id)}</Typography>
+                              <Typography variant="body2">Commander: {getCardName(s.commander_id)}</Typography>
                               <Typography variant="body2">Power Level: {formatNumber(s.power_level_rating, 3)}</Typography>
                             </Box>
                             <Box>
@@ -500,7 +502,7 @@ export default function DeckEditor() {
               <TableBody>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander</TableCell>
-                  <TableCell>{fetchCardName(selectedSnapshot.commander_id)}</TableCell>
+                  <TableCell>{getCardName(selectedSnapshot.commander_id)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
@@ -616,7 +618,8 @@ export default function DeckEditor() {
                       <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
                         {changedCards.added.map((card, i) => {
                           const cardId = card.card_id ?? null
-                          const cardName = card.card_name ?? (cardId ? fetchCardName(cardId) : null)
+                          const fetched = cardId ? fetchCardObject(cardId) : null
+                          const cardName = card.card_name ?? (fetched?.name ?? (cardId ? cardCache[cardId]?.name : null) ?? cardId)
                           const key = `added-${cardId || cardName}-${i}`
                           const imgSrcNormal = cardId
                             ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
@@ -670,7 +673,8 @@ export default function DeckEditor() {
                       <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
                         {changedCards.removed.map((card, i) => {
                           const cardId = card.card_id ?? null
-                          const cardName = card.card_name ?? (cardId ? fetchCardName(cardId) : null)
+                          const fetched = cardId ? fetchCardObject(cardId) : null
+                          const cardName = card.card_name ?? (fetched?.name ?? (cardId ? cardCache[cardId]?.name : null) ?? cardId)
                           const key = `removed-${cardId || cardName}-${i}`
                           const imgSrcNormal = cardId
                             ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
