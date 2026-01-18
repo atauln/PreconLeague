@@ -283,11 +283,13 @@ function MultiLineChart({
   width = 900,
   height = 420,
   startYZero = false,
+  smooth = true,
 }: {
   series: { name: string; data: { x: string; y: number | null }[]; stroke?: string }[]
   width?: number
   height?: number
   startYZero?: boolean
+  smooth?: boolean
 }) {
   if (!series || series.length === 0) return <Box sx={{ p: 2 }}>No data</Box>
   const theme = useTheme()
@@ -428,13 +430,41 @@ function MultiLineChart({
             .filter(Boolean) as { x: number; y: number }[]
 
           const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ')
+          // create a smoothed path. Use Catmull-Rom -> cubic Bezier conversion for natural curves.
+          const smoothPath = (() => {
+            if (!path) return ''
+            if (!smooth) return path
+            if (pts.length <= 2) return path
+
+            // helper: convert Catmull-Rom spline to cubic Bezier segments
+            const catmullRom2bezier = (points: { x: number; y: number }[]) => {
+              const dParts: string[] = []
+              dParts.push(`M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`)
+              for (let i = 0; i < points.length - 1; i++) {
+                const p0 = i === 0 ? points[0] : points[i - 1]
+                const p1 = points[i]
+                const p2 = points[i + 1]
+                const p3 = i + 2 < points.length ? points[i + 2] : p2
+
+                const cp1x = p1.x + (p2.x - p0.x) / 6
+                const cp1y = p1.y + (p2.y - p0.y) / 6
+                const cp2x = p2.x - (p3.x - p1.x) / 6
+                const cp2y = p2.y - (p3.y - p1.y) / 6
+
+                dParts.push(`C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`)
+              }
+              return dParts.join(' ')
+            }
+
+            return catmullRom2bezier(pts)
+          })()
           const color = s.stroke ?? colors[si % colors.length]
           const strokeWidth = isAverage ? 3.5 : 2.5
           const dash = isAverage ? '6 3' : undefined
 
           return (
             <g key={si}>
-              <path d={path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} style={isAverage ? { filter: 'url(#soft-shadow)', mixBlendMode: 'normal' } : undefined} />
+              <path d={smoothPath || path} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={dash} style={isAverage ? { filter: 'url(#soft-shadow)', mixBlendMode: 'normal' } : undefined} />
               {/* label for Average: draw a subtle halo then colored text positioned slightly above the line's end */}
               {isAverage && pts.length > 0 && (() => {
                 const last = pts[pts.length - 1]
@@ -902,9 +932,11 @@ export default function Analytics() {
                     <Typography variant="h6">All Decks — Metric view</Typography>
                     <Typography variant="body2" color="text.secondary">Shows the newest snapshot per week for each deck — one metric at a time.</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                    <Checkbox size="small" checked={showDeckLines} onChange={(e) => setShowDeckLines(e.target.checked)} />
-                    <Typography variant="body2">Show deck lines</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2, gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Checkbox size="small" checked={showDeckLines} onChange={(e) => setShowDeckLines(e.target.checked)} />
+                      <Typography variant="body2">Show deck lines</Typography>
+                    </Box>
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -934,12 +966,12 @@ export default function Analytics() {
                         })) : [])
                         // plus the average series (append)
                         .concat([
-                          {
-                            name: 'Average',
-                            data: allDecksAverages.averagesByMetric.get(metrics[metricIndex].id) ?? [],
-                            stroke: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-                          },
-                        ])
+                              {
+                                name: 'Average',
+                                data: allDecksAverages.averagesByMetric.get(metrics[metricIndex].id) ?? [],
+                                stroke: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+                              },
+                            ])
                       }
                       height={520}
                     />
