@@ -374,8 +374,8 @@ export default function DeckEditor() {
     <Container sx={{ py: 4 }}>
       <style>{`
         @keyframes rainbow-rotate { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
-        .rainbow-border { display: inline-block; padding: 3px; border-radius: 8px; background: linear-gradient(90deg, #ff3cac, #784ba0, #2b86c5, #00c9a7, #ffb347); animation: rainbow-rotate 3s linear infinite; }
-        .rainbow-inner { display: inline-block; border-radius: 6px; background: transparent; }
+        .rainbow-border { display: inline-block; padding: 1px; border-radius: 6px; background: linear-gradient(90deg, #ff3cac, #784ba0, #2b86c5, #00c9a7, #ffb347); animation: rainbow-rotate 3s linear infinite; }
+        .rainbow-inner { display: inline-block; border-radius: 5px; background: transparent; overflow: hidden; }
       `}</style>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h5">Deck editor</Typography>
@@ -667,7 +667,7 @@ export default function DeckEditor() {
                                       component="img"
                                       src={imgSrcThumb}
                                       alt={cardName ?? cardId ?? ''}
-                                      sx={{ height: 80, width: 'auto', borderRadius: 1, display: 'block' }}
+                                      sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block' }}
                                       loading="lazy"
                                       onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
                                     />
@@ -741,7 +741,7 @@ export default function DeckEditor() {
                                       component="img"
                                       src={imgSrcThumb}
                                       alt={cardName ?? cardId ?? ''}
-                                      sx={{ height: 80, width: 'auto', borderRadius: 1, display: 'block', opacity: 0.6 }}
+                                      sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
                                       loading="lazy"
                                       onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
                                     />
