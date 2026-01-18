@@ -372,6 +372,11 @@ export default function DeckEditor() {
 
   return (
     <Container sx={{ py: 4 }}>
+      <style>{`
+        @keyframes rainbow-rotate { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        .rainbow-border { display: inline-block; padding: 3px; border-radius: 8px; background: linear-gradient(90deg, #ff3cac, #784ba0, #2b86c5, #00c9a7, #ffb347); animation: rainbow-rotate 3s linear infinite; }
+        .rainbow-inner { display: inline-block; border-radius: 6px; background: transparent; }
+      `}</style>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h5">Deck editor</Typography>
         <MuiLink component={RouterLink} to="/">← Back to home</MuiLink>
@@ -619,7 +624,8 @@ export default function DeckEditor() {
                         {changedCards.added.map((card, i) => {
                           const cardId = card.card_id ?? null
                           const fetched = cardId ? fetchCardObject(cardId) : null
-                          const cardName = card.card_name ?? (fetched?.name ?? (cardId ? cardCache[cardId]?.name : null) ?? cardId)
+                          const cached = cardId ? cardCache[cardId] : null
+                          const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
                           const key = `added-${cardId || cardName}-${i}`
                           const imgSrcNormal = cardId
                             ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
@@ -627,6 +633,9 @@ export default function DeckEditor() {
                           const imgSrcThumb = cardId
                             ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
                             : `https://svgs.scryfall.io/card-symbols/mana.svg`
+                          const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                          const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                          const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
                           return (
                             <Tooltip
@@ -651,14 +660,29 @@ export default function DeckEditor() {
                               placement="top"
                               arrow
                             >
-                              <Box
-                                component="img"
-                                src={imgSrcThumb}
-                                alt={cardName ?? cardId ?? ''}
-                                sx={{ height: 80, width: 'auto', borderRadius: 1 }}
-                                loading="lazy"
-                                onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                              />
+                              {isImportant ? (
+                                <Box className="rainbow-border">
+                                  <Box className="rainbow-inner">
+                                    <Box
+                                      component="img"
+                                      src={imgSrcThumb}
+                                      alt={cardName ?? cardId ?? ''}
+                                      sx={{ height: 80, width: 'auto', borderRadius: 1, display: 'block' }}
+                                      loading="lazy"
+                                      onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                    />
+                                  </Box>
+                                </Box>
+                              ) : (
+                                <Box
+                                  component="img"
+                                  src={imgSrcThumb}
+                                  alt={cardName ?? cardId ?? ''}
+                                  sx={{ height: 80, width: 'auto', borderRadius: 1 }}
+                                  loading="lazy"
+                                  onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                />
+                              )}
                             </Tooltip>
                           )
                         })}
@@ -674,7 +698,8 @@ export default function DeckEditor() {
                         {changedCards.removed.map((card, i) => {
                           const cardId = card.card_id ?? null
                           const fetched = cardId ? fetchCardObject(cardId) : null
-                          const cardName = card.card_name ?? (fetched?.name ?? (cardId ? cardCache[cardId]?.name : null) ?? cardId)
+                          const cached = cardId ? cardCache[cardId] : null
+                          const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
                           const key = `removed-${cardId || cardName}-${i}`
                           const imgSrcNormal = cardId
                             ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
@@ -682,6 +707,9 @@ export default function DeckEditor() {
                           const imgSrcThumb = cardId
                             ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
                             : `https://svgs.scryfall.io/card-symbols/mana.svg`
+                          const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                          const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                          const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
                           return (
                             <Tooltip
@@ -706,14 +734,29 @@ export default function DeckEditor() {
                               placement="top"
                               arrow
                             >
-                              <Box
-                                component="img"
-                                src={imgSrcThumb}
-                                alt={cardName ?? cardId ?? ''}
-                                sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
-                                loading="lazy"
-                                onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                              />
+                              {isImportant ? (
+                                <Box className="rainbow-border">
+                                  <Box className="rainbow-inner">
+                                    <Box
+                                      component="img"
+                                      src={imgSrcThumb}
+                                      alt={cardName ?? cardId ?? ''}
+                                      sx={{ height: 80, width: 'auto', borderRadius: 1, display: 'block', opacity: 0.6 }}
+                                      loading="lazy"
+                                      onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                    />
+                                  </Box>
+                                </Box>
+                              ) : (
+                                <Box
+                                  component="img"
+                                  src={imgSrcThumb}
+                                  alt={cardName ?? cardId ?? ''}
+                                  sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                                  loading="lazy"
+                                  onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                />
+                              )}
                             </Tooltip>
                           )
                         })}
