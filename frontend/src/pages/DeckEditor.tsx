@@ -527,6 +527,8 @@ export default function DeckEditor() {
         fetchCardObject={fetchCardObject}
         getCardName={getCardName}
         renderStatWithPrevDiff={renderStatWithPrevDiff}
+        formatNumber={formatNumber}
+        formatCurrency={formatCurrency}
         weekEdits={weekEdits}
         setWeekEdits={setWeekEdits}
         modalEditingWeek={modalEditingWeek}

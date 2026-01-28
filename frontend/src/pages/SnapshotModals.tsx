@@ -59,6 +59,8 @@ export function SnapshotDetailsModal(props: {
     formatter: (v?: number | null) => string,
     options?: { percent?: boolean; maximumFractionDigits?: number; compareWeek?: number | null }
   ) => JSX.Element
+  formatNumber: (v?: number | null, maximumFractionDigits?: number) => string
+  formatCurrency: (v?: number | null) => string
   weekEdits: Record<number, number>
   setWeekEdits: Dispatch<SetStateAction<Record<number, number>>>
   modalEditingWeek: boolean
@@ -92,6 +94,9 @@ export function SnapshotDetailsModal(props: {
     changedCardsLoading,
     getQuantityofChangedCards,
   } = props
+
+  // local aliases for consistency
+  const fmtNum = (v?: number | null, mfd = 1) => (props as any).formatNumber ? (props as any).formatNumber(v, mfd) : (v === null || v === undefined ? '—' : String(v))
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -131,35 +136,35 @@ export function SnapshotDetailsModal(props: {
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'overall_rating', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'overall_rating', (v) => fmtNum(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Power Level</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'power_level_rating', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'power_level_rating', (v) => fmtNum(v, 2), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Salt Rating</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'salt_rating', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'salt_rating', (v) => fmtNum(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Synergy</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'synergy_rating', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'synergy_rating', (v) => fmtNum(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'bracket_rating', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'bracket_rating', (v) => fmtNum(v, 2), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'manabase_score', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'manabase_score', (v) => fmtNum(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Commander Tier</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'commander_tier', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'commander_tier', (v) => fmtNum(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Card Quality</TableCell>
-                <TableCell>{renderStatWithPrevDiff(snapshot, 'card_quality', (v) => String(v ?? '—'), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
+                <TableCell>{renderStatWithPrevDiff(snapshot, 'card_quality', (v) => fmtNum(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
