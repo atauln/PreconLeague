@@ -342,3 +342,143 @@ async def read_snapshot_changes(snapshot_id: int, old_snapshot_id: int):
         "added_cards": added_cards,
         "removed_cards": removed_cards
     }
+
+@router.get("/deck/{deck_id}/temp_snapshot")
+async def get_ephemeral_snapshot(deck_id: int):
+    """Return the most recent snapshot for the given deck_id, without saving a new snapshot.
+
+    This endpoint is intended for previewing changes before committing a new snapshot.
+    """
+    deck = await get_deck_by_id(deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    
+    source = deck.get("source")
+    source_deck_url = deck.get("moxfield_deck_url") if source == "moxfield" else deck.get("archidekt_deck_url")
+
+    if source == "moxfield":
+        proc_deck = fetch_moxfield_deck(source_deck_url)
+    elif source == "archidekt":
+        proc_deck = fetch_archidekt_deck(source_deck_url)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid deck source")
+    
+    commandersalt_data = fetch_commandersalt_deck_data(source_deck_url)
+
+    # Build library card entries in the same shape the rest of the API uses
+    library_cards = []
+    for card in proc_deck.library:
+        cid = getattr(card, 'id', None)
+        name = getattr(card, 'name', None)
+        qty = getattr(card, 'quantity', None)
+        qty = qty if isinstance(qty, int) and qty > 0 else 1
+        library_cards.append({
+            'card_id': cid,
+            'card_name': name,
+            'quantity': qty,
+        })
+
+    # Choose primary commander if present
+    commander = proc_deck.commanders[0] if getattr(proc_deck, 'commanders', None) else None
+
+    # Build a snapshot-shaped dict similar to snapshots returned by the DB functions
+    snapshot = {
+        'snapshot_id': None,
+        'deck_id': deck_id,
+        'snapshot_name': None,
+        'created_at': datetime.now().isoformat(),
+        'commander_id': getattr(commander, 'id', None) if commander else None,
+        'overall_rating': getattr(commandersalt_data, 'overall_rating', None),
+        'power_level_rating': getattr(commandersalt_data, 'power_level_rating', None),
+        'salt_rating': getattr(commandersalt_data, 'salt_rating', None),
+        'synergy_rating': getattr(commandersalt_data, 'synergy_rating', None),
+        'threat_rating': getattr(commandersalt_data, 'threat_rating', None),
+        'bracket_rating': getattr(commandersalt_data, 'bracket_rating', None),
+        'combo_rating': getattr(commandersalt_data, 'combo_rating', None),
+        'manabase_score': getattr(commandersalt_data, 'manabase_score', None),
+        'archetype_minor': getattr(commandersalt_data, 'archetype_minor', None),
+        'archetype_major': getattr(commandersalt_data, 'archetype_major', None),
+        'price_usd': getattr(commandersalt_data, 'price_usd', None),
+        'week_of_league': CURRENT_WEEK_NUMBER,
+        'mana_fixing_score': getattr(commandersalt_data, 'mana_fixing_score', None),
+        'competitive_intent': getattr(commandersalt_data, 'competitive_intent', None),
+        'commander_tier': getattr(commandersalt_data, 'commander_tier', None),
+        'card_quality': getattr(commandersalt_data, 'card_quality', None),
+        'library_cards': library_cards,
+        'commanders': [ {'id': getattr(c, 'id', None), 'name': getattr(c, 'name', None)} for c in getattr(proc_deck, 'commanders', []) ]
+    }
+
+    # Attempt to compute diffs against the most recent saved snapshot for this deck
+    try:
+        prev = await get_most_recent_snapshot_for_deck(deck_id)
+        if prev:
+            # Load full library for the previous snapshot
+            prev_full = await get_snapshot_with_library(prev.get('snapshot_id'))
+
+            # Reuse comparison logic from read_snapshot_changes
+            def _counts_from_proc_library(lib):
+                counts = {}
+                meta = {}
+                for c in lib or []:
+                    card_id = (getattr(c, 'id', None) if not isinstance(c, dict) else c.get('card_id'))
+                    card_name = (getattr(c, 'name', None) if not isinstance(c, dict) else c.get('card_name'))
+                    if card_id is None and not card_name:
+                        continue
+                    # Prefer using card_id as the canonical key when available (more robust)
+                    key = card_id if card_id else card_name
+                    qty = (getattr(c, 'quantity', None) if not isinstance(c, dict) else c.get('quantity'))
+                    qty = qty if isinstance(qty, int) else 1
+                    counts[key] = counts.get(key, 0) + (qty or 0)
+                    if key not in meta:
+                        meta[key] = {'card_id': card_id, 'card_name': card_name}
+                return counts, meta
+
+            def _counts_from_library_rows(lib_cards: list):
+                counts = {}
+                meta = {}
+                for c in lib_cards or []:
+                    card_id = c.get('card_id') or c.get('oracle_card_id') or c.get('id')
+                    card_name = c.get('card_name') or c.get('name')
+                    if card_id is None and not card_name:
+                        continue
+                    # Prefer card_id as key when available
+                    key = card_id if card_id else card_name
+                    qty = c.get('quantity') if isinstance(c.get('quantity'), int) else 1
+                    counts[key] = counts.get(key, 0) + (qty or 0)
+                    if key not in meta:
+                        meta[key] = {'card_id': card_id, 'card_name': card_name}
+                return counts, meta
+
+            new_counts, new_meta = _counts_from_proc_library(proc_deck.library)
+            if prev_full:
+                old_counts, old_meta = _counts_from_library_rows(prev_full.get('library_cards', []))
+            else:
+                old_counts, old_meta = {}, {}
+
+            added_cards = []
+            removed_cards = []
+            all_keys = set(new_counts.keys()) | set(old_counts.keys())
+            for key in all_keys:
+                n_qty = new_counts.get(key, 0)
+                o_qty = old_counts.get(key, 0)
+                qty_diff = abs(n_qty - o_qty)
+                if qty_diff == 0:
+                    continue
+                meta = new_meta.get(key) or old_meta.get(key) or {'card_id': None, 'card_name': None}
+                entry = {
+                    'card_id': meta.get('card_id'),
+                    'card_name': meta.get('card_name'),
+                    'quantity': qty_diff,
+                }
+                if n_qty > o_qty:
+                    added_cards.append(entry)
+                else:
+                    removed_cards.append(entry)
+
+            snapshot['added_cards'] = added_cards
+            snapshot['removed_cards'] = removed_cards
+    except Exception:
+        # Best-effort: if anything fails computing diffs, return snapshot without diffs
+        pass
+
+    return snapshot

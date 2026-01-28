@@ -76,6 +76,9 @@ export default function DeckEditor() {
   const [creating, setCreating] = useState(false)
   const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [tempSnapshot, setTempSnapshot] = useState<Partial<Snapshot & { library_cards?: any[]; commanders?: any[] }> | null>(null)
+  const [tempModalOpen, setTempModalOpen] = useState(false)
+  const [tempPrevSnapshot, setTempPrevSnapshot] = useState<Partial<Snapshot> | null>(null)
   const [cardCache, setCardCache] = useState<Record<string, any>>({})
   const cardFetchInFlight = useRef<Set<string>>(new Set())
   const [weekEdits, setWeekEdits] = useState<Record<number, number>>({})
@@ -368,6 +371,50 @@ export default function DeckEditor() {
     }
   }
 
+  async function showTempSnapshotData() {
+    // fetch data from /decks/{deckId}/temp_snapshot
+    // form: "deck_id": deck_id,
+        // "commandersalt_data": commandersalt_data,
+        // "library_cards": [ {"id": card.id, "name": card.name, "quantity": card.quantity} for card in proc_deck.library ],
+        // "commanders": [ {"id": cmdr.id, "name": cmdr.name} for cmdr in proc_deck.commanders ]
+    if (isNaN(id)) return
+    setLoading(true)
+    setError(null)
+    setTempPrevSnapshot(null)
+    try {
+      const res = await fetch(apiUrl(`/snapshots/deck/${id}/temp_snapshot`))
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`Fetch temp snapshot failed: ${res.status} ${text}`)
+      }
+      const data = await res.json()
+      setTempSnapshot(data)
+      setTempModalOpen(true)
+
+      // Also fetch the most recent saved snapshot for the deck to compute metric deltas
+      try {
+        const prevRes = await fetch(apiUrl(`/decks/most_recent_snapshot/${id}`))
+        if (prevRes.ok) {
+          const prevData = await prevRes.json()
+          setTempPrevSnapshot(prevData)
+        } else {
+          setTempPrevSnapshot(null)
+        }
+      } catch (_) {
+        setTempPrevSnapshot(null)
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function closeTempModal() {
+    setTempModalOpen(false)
+    setTempSnapshot(null)
+  }
+
   if (!deckId || isNaN(id)) {
     return (
       <Container sx={{ py: 4 }}>
@@ -419,9 +466,14 @@ export default function DeckEditor() {
 
       <Box mb={2} display="flex" alignItems="center" justifyContent="space-between">
         <Typography variant="h6">Snapshots</Typography>
-        <Button variant="contained" onClick={handleCreateSnapshot} disabled={creating || loading}>
-          {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
-        </Button>
+        <Box>
+          <Button variant="outlined" onClick={() => showTempSnapshotData()} sx={{ paddingRight: '1rem', marginRight: '1rem' }}>
+            Get Temporary Snapshot Data
+          </Button>
+          <Button variant="contained" onClick={handleCreateSnapshot} disabled={creating || loading}>
+            {creating ? 'Creating snapshot…' : 'Create snapshot from source'}
+          </Button>
+        </Box>
       </Box>
 
       {snapshots.length === 0 && !loading && <Typography>No snapshots yet.</Typography>}
@@ -784,6 +836,231 @@ export default function DeckEditor() {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDetails}>Close</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Temporary snapshot preview dialog (mirrors snapshot details styling) */}
+      <Dialog open={tempModalOpen} onClose={closeTempModal} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box>{tempSnapshot ? tempSnapshot.snapshot_name || 'Temporary Snapshot Preview' : 'Temporary Snapshot Preview'}</Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary">Preview — not saved</Typography>
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {tempSnapshot ? (
+            <>
+              <Table size="small">
+                <TableBody>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander</TableCell>
+                    <TableCell>{getCardName((tempSnapshot as any).commander_id)}</TableCell>
+                  </TableRow>
+                  {/** Render metrics with optional percent diffs vs saved snapshot */}
+                  {(
+                    [
+                      { key: 'overall_rating', label: 'Overall Rating', fmt: (v: any) => formatNumber(v, 1) },
+                      { key: 'power_level_rating', label: 'Power Level', fmt: (v: any) => formatNumber(v, 2) },
+                      { key: 'salt_rating', label: 'Salt Rating', fmt: (v: any) => formatNumber(v, 1) },
+                      { key: 'synergy_rating', label: 'Synergy', fmt: (v: any) => formatNumber(v, 1) },
+                      { key: 'bracket_rating', label: 'Bracket', fmt: (v: any) => formatNumber(v, 2) },
+                      { key: 'manabase_score', label: 'Manabase Score', fmt: (v: any) => formatNumber(v, 0) },
+                      { key: 'commander_tier', label: 'Commander Tier', fmt: (v: any) => formatNumber(v, 0) },
+                      { key: 'card_quality', label: 'Card Quality', fmt: (v: any) => formatNumber(v, 1) },
+                      { key: 'price_usd', label: 'Price', fmt: (v: any) => formatCurrency(v) }
+                    ] as Array<any>
+                  ).map((m) => {
+                    const tempVal = (tempSnapshot as any)[m.key] as number | null
+                    const prevVal = tempPrevSnapshot ? (tempPrevSnapshot as any)[m.key] as number | null : null
+                    const formatted = m.fmt(tempVal)
+
+                    // compute diff and percent only when prevVal is a valid number and tempVal is valid
+                    if (prevVal === null || prevVal === undefined || Number.isNaN(prevVal as number) || tempVal === null || tempVal === undefined || Number.isNaN(tempVal as number)) {
+                      return (
+                        <TableRow key={m.key}>
+                          <TableCell sx={{ fontWeight: 'bold' }}>{m.label}</TableCell>
+                          <TableCell>{formatted}</TableCell>
+                        </TableRow>
+                      )
+                    }
+
+                    const diff = (tempVal as number) - (prevVal as number)
+                    const diffFormatted = m.fmt(diff)
+                    let percentStr: string | null = null
+                    if (prevVal !== 0) {
+                      const pct = (diff / (prevVal as number)) * 100
+                      const pctFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 0 })
+                      percentStr = `${pctFormatter.format(Math.abs(pct))}%`
+                    }
+
+                    return (
+                      <TableRow key={m.key}>
+                        <TableCell sx={{ fontWeight: 'bold' }}>{m.label}</TableCell>
+                        <TableCell>
+                          {formatted}
+                          <Typography component="span" sx={{ ml: 1, color: diff >= 0 ? 'success.main' : 'error.main', fontSize: '0.875rem' }}>
+                            ({diff > 0 ? '+' : ''}{diffFormatted}{percentStr ? ` / ${percentStr}` : ''})
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Archetype</TableCell>
+                    <TableCell>{(tempSnapshot as any).archetype_major} - {(tempSnapshot as any).archetype_minor}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
+                    <TableCell>{formatCurrency((tempSnapshot as any).price_usd)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
+                    <TableCell>{(tempSnapshot as any).week_of_league ?? '—'}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              {/* Added / Removed cards (if backend provided diffs) */}
+              <Box mt={2}>
+                <Typography variant="subtitle1">Library changes</Typography>
+                <Box mt={1}>
+                  {((tempSnapshot as any).added_cards || []).length === 0 && ((tempSnapshot as any).removed_cards || []).length === 0 ? (
+                    <Typography color="text.secondary">No changes detected from most recent saved snapshot</Typography>
+                  ) : (
+                    <Grid container spacing={2}>
+                      <Grid>
+                        <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
+                        {((tempSnapshot as any).added_cards || []).length === 0 ? (
+                          <Typography color="text.secondary">None</Typography>
+                        ) : (
+                          <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                            {((tempSnapshot as any).added_cards || []).map((card: any, i: number) => {
+                              const cardId = card.card_id ?? null
+                              const fetched = cardId ? fetchCardObject(cardId) : null
+                              const cached = cardId ? cardCache[cardId] : null
+                              const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                              const key = `temp-added-${cardId || cardName}-${i}`
+                              const imgSrcThumb = cardId
+                                ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
+                                : `https://svgs.scryfall.io/card-symbols/mana.svg`
+                              const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                              const displayQty = Math.min(qty, 8)
+                              const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                              const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                              const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+
+                              return (
+                                <Box key={key} display="flex" gap={1} alignItems="center">
+                                  {Array.from({ length: displayQty }).map((_, idx) => (
+                                    <Tooltip
+                                      key={`${key}-img-${idx}`}
+                                      title={<Typography variant="caption">{cardName ?? cardId}</Typography>}
+                                      placement="top"
+                                      arrow
+                                    >
+                                      {isImportant ? (
+                                        <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                          <Box className="rainbow-inner">
+                                            <Box
+                                              component="img"
+                                              src={imgSrcThumb}
+                                              alt={cardName ?? cardId ?? ''}
+                                              sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
+                                              loading="lazy"
+                                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                            />
+                                          </Box>
+                                        </Box>
+                                      ) : (
+                                        <Box
+                                          component="img"
+                                          src={imgSrcThumb}
+                                          alt={cardName ?? cardId ?? ''}
+                                          sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                                          loading="lazy"
+                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                        />
+                                      )}
+                                    </Tooltip>
+                                  ))}
+                                </Box>
+                              )
+                            })}
+                          </Box>
+                        )}
+                      </Grid>
+                      <Grid>
+                        <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
+                        {((tempSnapshot as any).removed_cards || []).length === 0 ? (
+                          <Typography color="text.secondary">None</Typography>
+                        ) : (
+                          <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                            {((tempSnapshot as any).removed_cards || []).map((card: any, i: number) => {
+                              const cardId = card.card_id ?? null
+                              const fetched = cardId ? fetchCardObject(cardId) : null
+                              const cached = cardId ? cardCache[cardId] : null
+                              const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                              const key = `temp-removed-${cardId || cardName}-${i}`
+                              const imgSrcThumb = cardId
+                                ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg`
+                                : `https://svgs.scryfall.io/card-symbols/mana.svg`
+                              const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                              const displayQty = Math.min(qty, 8)
+                              const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                              const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                              const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+
+                              return (
+                                <Box key={key} display="flex" gap={1} alignItems="center">
+                                  {Array.from({ length: displayQty }).map((_, idx) => (
+                                    <Tooltip
+                                      key={`${key}-img-${idx}`}
+                                      title={<Typography variant="caption">{cardName ?? cardId}</Typography>}
+                                      placement="top"
+                                      arrow
+                                    >
+                                      {isImportant ? (
+                                        <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                          <Box className="rainbow-inner">
+                                            <Box
+                                              component="img"
+                                              src={imgSrcThumb}
+                                              alt={cardName ?? cardId ?? ''}
+                                              sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
+                                              loading="lazy"
+                                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                            />
+                                          </Box>
+                                        </Box>
+                                      ) : (
+                                        <Box
+                                          component="img"
+                                          src={imgSrcThumb}
+                                          alt={cardName ?? cardId ?? ''}
+                                          sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                                          loading="lazy"
+                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                        />
+                                      )}
+                                    </Tooltip>
+                                  ))}
+                                </Box>
+                              )
+                            })}
+                          </Box>
+                        )}
+                      </Grid>
+                    </Grid>
+                  )}
+                </Box>
+              </Box>
+            </>
+          ) : (
+            <Box display="flex" justifyContent="center"><CircularProgress /></Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeTempModal}>Close</Button>
         </DialogActions>
       </Dialog>
     </Container>
