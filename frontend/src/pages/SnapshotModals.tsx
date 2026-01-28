@@ -15,9 +15,9 @@ import {
   Typography,
   TextField,
   MenuItem,
-  Grid,
-  Tooltip
+  Grid
 } from '@mui/material'
+import CardImageTooltip from '../components/CardImageTooltip'
 
 type Snapshot = {
   snapshot_id: number
@@ -228,7 +228,6 @@ export function SnapshotDetailsModal(props: {
                         const cached = cardId ? cardCache[cardId] : null
                         const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
                         const key = `added-${cardId || cardName}-${i}`
-                        const imgSrcThumb = cardId ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : `https://svgs.scryfall.io/card-symbols/mana.svg`
                         const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
                         const displayQty = Math.min(qty, 8)
                         const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
@@ -239,38 +238,14 @@ export function SnapshotDetailsModal(props: {
                           <Box key={key} display="flex" gap={1} alignItems="center">
                             {Array.from({ length: displayQty }).map((_, idx) => {
                               const imgKey = `${key}-img-${idx}`
-                              const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
                               return (
-                                <Tooltip
+                                <CardImageTooltip
                                   key={imgKey}
-                                  title={
-                                    <Box>
-                                      {imgSrcNormal ? (
-                                        <Box
-                                          component="img"
-                                          src={imgSrcNormal}
-                                          alt={cardName ?? cardId}
-                                          sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                          loading="lazy"
-                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                        />
-                                      ) : null}
-                                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                    </Box>
-                                  }
-                                  placement="top"
-                                  arrow
-                                >
-                                  {isImportant ? (
-                                    <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                      <Box className="rainbow-inner">
-                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
-                                      </Box>
-                                    </Box>
-                                  ) : (
-                                    <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                  )}
-                                </Tooltip>
+                                  cardId={cardId}
+                                  cardName={cardName}
+                                  isImportant={isImportant}
+                                  thumbHeight={80}
+                                />
                               )
                             })}
                           </Box>
@@ -291,53 +266,28 @@ export function SnapshotDetailsModal(props: {
                         const cached = cardId ? cardCache[cardId] : null
                         const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
                         const key = `removed-${cardId || cardName}-${i}`
-                        const imgSrcThumb = cardId ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : `https://svgs.scryfall.io/card-symbols/mana.svg`
                         const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
                         const displayQty = Math.min(qty, 8)
                         const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
                         const priceNum = priceStr ? parseFloat(priceStr as string) : null
                         const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
-                        return (
-                          <Box key={key} display="flex" gap={1} alignItems="center">
-                            {Array.from({ length: displayQty }).map((_, idx) => {
-                              const imgKey = `${key}-img-${idx}`
-                              const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
                               return (
-                                <Tooltip
-                                  key={imgKey}
-                                  title={
-                                    <Box>
-                                      {imgSrcNormal ? (
-                                        <Box
-                                          component="img"
-                                          src={imgSrcNormal}
-                                          alt={cardName ?? cardId}
-                                          sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                          loading="lazy"
-                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                        />
-                                      ) : null}
-                                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                    </Box>
-                                  }
-                                  placement="top"
-                                  arrow
-                                >
-                                  {isImportant ? (
-                                    <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                      <Box className="rainbow-inner">
-                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
-                                      </Box>
-                                    </Box>
-                                  ) : (
-                                    <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                  )}
-                                </Tooltip>
+                                <Box key={key} display="flex" gap={1} alignItems="center">
+                                  {Array.from({ length: displayQty }).map((_, idx) => {
+                                    const imgKey = `${key}-img-${idx}`
+                                    return (
+                                      <CardImageTooltip
+                                        key={imgKey}
+                                        cardId={cardId}
+                                        cardName={cardName}
+                                        isImportant={isImportant}
+                                        thumbHeight={80}
+                                      />
+                                    )
+                                  })}
+                                </Box>
                               )
-                            })}
-                          </Box>
-                        )
                       })}
                     </Box>
                   )}
@@ -468,7 +418,6 @@ export function TempSnapshotModal(props: {
                             const cached = cardId ? cardCache[cardId] : null
                             const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
                             const key = `temp-added-${cardId || cardName}-${i}`
-                            const imgSrcThumb = cardId ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : `https://svgs.scryfall.io/card-symbols/mana.svg`
                             const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
                             const displayQty = Math.min(qty, 8)
                             const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
@@ -479,38 +428,14 @@ export function TempSnapshotModal(props: {
                               <Box key={key} display="flex" gap={1} alignItems="center">
                                 {Array.from({ length: displayQty }).map((_, idx) => {
                                   const imgKey = `${key}-img-${idx}`
-                                  const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
                                   return (
-                                    <Tooltip
+                                    <CardImageTooltip
                                       key={imgKey}
-                                      title={
-                                        <Box>
-                                          {imgSrcNormal ? (
-                                            <Box
-                                              component="img"
-                                              src={imgSrcNormal}
-                                              alt={cardName ?? cardId}
-                                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                              loading="lazy"
-                                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                            />
-                                          ) : null}
-                                          <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                        </Box>
-                                      }
-                                      placement="top"
-                                      arrow
-                                    >
-                                      {isImportant ? (
-                                        <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                          <Box className="rainbow-inner">
-                                            <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
-                                          </Box>
-                                        </Box>
-                                      ) : (
-                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                      )}
-                                    </Tooltip>
+                                      cardId={cardId}
+                                      cardName={cardName}
+                                      isImportant={isImportant}
+                                      thumbHeight={80}
+                                    />
                                   )
                                 })}
                               </Box>
@@ -531,7 +456,6 @@ export function TempSnapshotModal(props: {
                             const cached = cardId ? cardCache[cardId] : null
                             const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
                             const key = `temp-removed-${cardId || cardName}-${i}`
-                            const imgSrcThumb = cardId ? `https://cards.scryfall.io/art_crop/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : `https://svgs.scryfall.io/card-symbols/mana.svg`
                             const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
                             const displayQty = Math.min(qty, 8)
                             const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
@@ -542,38 +466,14 @@ export function TempSnapshotModal(props: {
                               <Box key={key} display="flex" gap={1} alignItems="center">
                                 {Array.from({ length: displayQty }).map((_, idx) => {
                                   const imgKey = `${key}-img-${idx}`
-                                  const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
                                   return (
-                                    <Tooltip
+                                    <CardImageTooltip
                                       key={imgKey}
-                                      title={
-                                        <Box>
-                                          {imgSrcNormal ? (
-                                            <Box
-                                              component="img"
-                                              src={imgSrcNormal}
-                                              alt={cardName ?? cardId}
-                                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                              loading="lazy"
-                                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                            />
-                                          ) : null}
-                                          <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                        </Box>
-                                      }
-                                      placement="top"
-                                      arrow
-                                    >
-                                      {isImportant ? (
-                                        <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                          <Box className="rainbow-inner">
-                                            <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
-                                          </Box>
-                                        </Box>
-                                      ) : (
-                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                      )}
-                                    </Tooltip>
+                                      cardId={cardId}
+                                      cardName={cardName}
+                                      isImportant={isImportant}
+                                      thumbHeight={80}
+                                    />
                                   )
                                 })}
                               </Box>
