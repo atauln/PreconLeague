@@ -1036,11 +1036,7 @@ export default function Analytics() {
                     <Typography>Salt: {formatNumber(snapshots[snapshots.length - 1].salt_rating)}</Typography>
                     <Typography>Power Level: {formatNumber((snapshots[snapshots.length - 1] as any).power_level_rating)}</Typography>
                     <Typography>Synergy: {formatNumber((snapshots[snapshots.length - 1] as any).synergy_rating)}</Typography>
-                    <Typography>Threat: {formatNumber((snapshots[snapshots.length - 1] as any).threat_rating)}</Typography>
-                    <Typography>Combo: {formatNumber((snapshots[snapshots.length - 1] as any).combo_rating)}</Typography>
                     <Typography>Manabase: {formatNumber((snapshots[snapshots.length - 1] as any).manabase_score)}</Typography>
-                    <Typography>Mana Fixing: {formatNumber((snapshots[snapshots.length - 1] as any).mana_fixing_score)}</Typography>
-                    <Typography>Competitive Intent: {formatNumber((snapshots[snapshots.length - 1] as any).competitive_intent)}</Typography>
                     <Typography>Card Quality: {formatNumber((snapshots[snapshots.length - 1] as any).card_quality)}</Typography>
                     <Typography>Price: {snapshots[snapshots.length - 1].price_usd ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(snapshots[snapshots.length - 1].price_usd as number) : '—'}</Typography>
                   </Box>
