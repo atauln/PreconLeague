@@ -51,15 +51,10 @@ const METRICS: { key: keyof SnapshotWithDeck; label: string }[] = [
   { key: 'bracket_rating', label: 'Bracket Rating' },
   { key: 'salt_rating', label: 'Salt Rating' },
   { key: 'price_usd', label: 'Price (USD)' },
-  { key: 'threat_rating', label: 'Threat Rating' },
   { key: 'overall_rating', label: 'Overall Rating' },
   { key: 'power_level_rating', label: 'Power Level' },
   { key: 'synergy_rating', label: 'Synergy' },
-  { key: 'combo_rating', label: 'Combo' },
   { key: 'manabase_score', label: 'Manabase Score' },
-  { key: 'mana_fixing_score', label: 'Mana Fixing Score' },
-  { key: 'competitive_intent', label: 'Competitive Intent' },
-  { key: 'commander_tier', label: 'Commander Tier' },
   { key: 'card_quality', label: 'Card Quality' },
 ]
 
