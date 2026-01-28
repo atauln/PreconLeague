@@ -329,6 +329,12 @@ export default function DeckEditor() {
     setSelectedSnapshot(null)
   }
 
+  function getQuantityofChangedCards(changes: { added: ChangedCard[]; removed: ChangedCard[] }) {
+    const addedQty = changes.added.reduce((sum, c) => sum + (c.quantity || 0), 0)
+    const removedQty = changes.removed.reduce((sum, c) => sum + (c.quantity || 0), 0)
+    return addedQty - removedQty
+  }
+
   async function handleUpdateWeek(snapshotId: number) {
     const newWeek = weekEdits[snapshotId]
     if (newWeek === undefined || newWeek === null || Number.isNaN(newWeek) || newWeek < 0) {
@@ -593,6 +599,12 @@ export default function DeckEditor() {
           )}
           {/* Changed cards section */}
           <Box mt={2}>
+            {changedCards && getQuantityofChangedCards(changedCards) !== 0 && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Warning: The difference between added and removed cards is not zero. 
+                Net change: {getQuantityofChangedCards(changedCards) > 0 ? '+' : ''}{getQuantityofChangedCards(changedCards)} cards.
+              </Alert>
+            )}
             <Typography variant="subtitle1">Library changes</Typography>
             <Box mt={1}>
               {changedCardsLoading ? (
@@ -621,6 +633,10 @@ export default function DeckEditor() {
                           const priceNum = priceStr ? parseFloat(priceStr as string) : null
                           const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
+                          // Determine how many images to render for this card (cap to avoid huge layouts)
+                          const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                          const displayQty = Math.min(qty, 8)
+
                           return (
                             <Tooltip
                               key={key}
@@ -636,37 +652,40 @@ export default function DeckEditor() {
                                     />
                                   ) : null}
                                   <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                  {card.quantity && card.quantity > 1 ? (
-                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.25 }}>Quantity: {card.quantity}</Typography>
-                                  ) : null}
                                 </Box>
                               }
                               placement="top"
                               arrow
                             >
-                              {isImportant ? (
-                                <Box className="rainbow-border">
-                                  <Box className="rainbow-inner">
+                              <Box display="flex" gap={1} alignItems="center">
+                                {Array.from({ length: displayQty }).map((_, idx) => {
+                                  const imgKey = `${key}-img-${idx}`
+                                  return isImportant ? (
+                                    <Box key={imgKey} className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                      <Box className="rainbow-inner">
+                                        <Box
+                                          component="img"
+                                          src={imgSrcThumb}
+                                          alt={cardName ?? cardId ?? ''}
+                                          sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block' }}
+                                          loading="lazy"
+                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                        />
+                                      </Box>
+                                    </Box>
+                                  ) : (
                                     <Box
+                                      key={imgKey}
                                       component="img"
                                       src={imgSrcThumb}
                                       alt={cardName ?? cardId ?? ''}
-                                      sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block' }}
+                                      sx={{ height: 80, width: 'auto', borderRadius: 1 }}
                                       loading="lazy"
                                       onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
                                     />
-                                  </Box>
-                                </Box>
-                              ) : (
-                                <Box
-                                  component="img"
-                                  src={imgSrcThumb}
-                                  alt={cardName ?? cardId ?? ''}
-                                  sx={{ height: 80, width: 'auto', borderRadius: 1 }}
-                                  loading="lazy"
-                                  onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                />
-                              )}
+                                  )
+                                })}
+                              </Box>
                             </Tooltip>
                           )
                         })}
@@ -695,6 +714,10 @@ export default function DeckEditor() {
                           const priceNum = priceStr ? parseFloat(priceStr as string) : null
                           const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
+                          // Render multiple images for removed cards too (cap to avoid huge layouts)
+                          const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                          const displayQty = Math.min(qty, 8)
+
                           return (
                             <Tooltip
                               key={key}
@@ -718,29 +741,35 @@ export default function DeckEditor() {
                               placement="top"
                               arrow
                             >
-                              {isImportant ? (
-                                <Box className="rainbow-border">
-                                  <Box className="rainbow-inner">
+                              <Box display="flex" gap={1} alignItems="center">
+                                {Array.from({ length: displayQty }).map((_, idx) => {
+                                  const imgKey = `${key}-img-${idx}`
+                                  return isImportant ? (
+                                    <Box key={imgKey} className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                      <Box className="rainbow-inner">
+                                        <Box
+                                          component="img"
+                                          src={imgSrcThumb}
+                                          alt={cardName ?? cardId ?? ''}
+                                          sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
+                                          loading="lazy"
+                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                        />
+                                      </Box>
+                                    </Box>
+                                  ) : (
                                     <Box
+                                      key={imgKey}
                                       component="img"
                                       src={imgSrcThumb}
                                       alt={cardName ?? cardId ?? ''}
-                                      sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
+                                      sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
                                       loading="lazy"
                                       onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
                                     />
-                                  </Box>
-                                </Box>
-                              ) : (
-                                <Box
-                                  component="img"
-                                  src={imgSrcThumb}
-                                  alt={cardName ?? cardId ?? ''}
-                                  sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
-                                  loading="lazy"
-                                  onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                />
-                              )}
+                                  )
+                                })}
+                              </Box>
                             </Tooltip>
                           )
                         })}
