@@ -526,28 +526,12 @@ export default function DeckEditor() {
                   <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'synergy_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Threat</TableCell>
-                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'threat_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
-                </TableRow>
-                <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Bracket</TableCell>
                   <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'bracket_rating', (v) => formatNumber(v, 2), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Combo</TableCell>
-                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'combo_rating', (v) => formatNumber(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
-                </TableRow>
-                <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Manabase Score</TableCell>
                   <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'manabase_score', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Mana Fixing Score</TableCell>
-                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'mana_fixing_score', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Competitive Intent</TableCell>
-                  <TableCell>{renderStatWithPrevDiff(selectedSnapshot, 'competitive_intent', (v) => formatNumber(v, 0), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'bold' }}>Commander Tier</TableCell>
