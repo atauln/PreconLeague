@@ -237,19 +237,42 @@ export function SnapshotDetailsModal(props: {
 
                         return (
                           <Box key={key} display="flex" gap={1} alignItems="center">
-                            {Array.from({ length: displayQty }).map((_, idx) => (
-                              <Tooltip key={`${key}-img-${idx}`} title={<Typography variant="caption">{cardName ?? cardId}</Typography>} placement="top" arrow>
-                                {isImportant ? (
-                                  <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                    <Box className="rainbow-inner">
-                                      <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                            {Array.from({ length: displayQty }).map((_, idx) => {
+                              const imgKey = `${key}-img-${idx}`
+                              const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
+                              return (
+                                <Tooltip
+                                  key={imgKey}
+                                  title={
+                                    <Box>
+                                      {imgSrcNormal ? (
+                                        <Box
+                                          component="img"
+                                          src={imgSrcNormal}
+                                          alt={cardName ?? cardId}
+                                          sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                          loading="lazy"
+                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                        />
+                                      ) : null}
+                                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
                                     </Box>
-                                  </Box>
-                                ) : (
-                                  <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                )}
-                              </Tooltip>
-                            ))}
+                                  }
+                                  placement="top"
+                                  arrow
+                                >
+                                  {isImportant ? (
+                                    <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                      <Box className="rainbow-inner">
+                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                                      </Box>
+                                    </Box>
+                                  ) : (
+                                    <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
+                                  )}
+                                </Tooltip>
+                              )
+                            })}
                           </Box>
                         )
                       })}
@@ -277,19 +300,42 @@ export function SnapshotDetailsModal(props: {
 
                         return (
                           <Box key={key} display="flex" gap={1} alignItems="center">
-                            {Array.from({ length: displayQty }).map((_, idx) => (
-                              <Tooltip key={`${key}-img-${idx}`} title={<Typography variant="caption">{cardName ?? cardId}</Typography>} placement="top" arrow>
-                                {isImportant ? (
-                                  <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                    <Box className="rainbow-inner">
-                                      <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                            {Array.from({ length: displayQty }).map((_, idx) => {
+                              const imgKey = `${key}-img-${idx}`
+                              const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
+                              return (
+                                <Tooltip
+                                  key={imgKey}
+                                  title={
+                                    <Box>
+                                      {imgSrcNormal ? (
+                                        <Box
+                                          component="img"
+                                          src={imgSrcNormal}
+                                          alt={cardName ?? cardId}
+                                          sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                          loading="lazy"
+                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                        />
+                                      ) : null}
+                                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
                                     </Box>
-                                  </Box>
-                                ) : (
-                                  <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                )}
-                              </Tooltip>
-                            ))}
+                                  }
+                                  placement="top"
+                                  arrow
+                                >
+                                  {isImportant ? (
+                                    <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                      <Box className="rainbow-inner">
+                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                                      </Box>
+                                    </Box>
+                                  ) : (
+                                    <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
+                                  )}
+                                </Tooltip>
+                              )
+                            })}
                           </Box>
                         )
                       })}
@@ -431,19 +477,42 @@ export function TempSnapshotModal(props: {
 
                             return (
                               <Box key={key} display="flex" gap={1} alignItems="center">
-                                {Array.from({ length: displayQty }).map((_, idx) => (
-                                  <Tooltip key={`${key}-img-${idx}`} title={<Typography variant="caption">{cardName ?? cardId}</Typography>} placement="top" arrow>
-                                    {isImportant ? (
-                                      <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                        <Box className="rainbow-inner">
-                                          <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                                {Array.from({ length: displayQty }).map((_, idx) => {
+                                  const imgKey = `${key}-img-${idx}`
+                                  const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
+                                  return (
+                                    <Tooltip
+                                      key={imgKey}
+                                      title={
+                                        <Box>
+                                          {imgSrcNormal ? (
+                                            <Box
+                                              component="img"
+                                              src={imgSrcNormal}
+                                              alt={cardName ?? cardId}
+                                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                              loading="lazy"
+                                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                            />
+                                          ) : null}
+                                          <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
                                         </Box>
-                                      </Box>
-                                    ) : (
-                                      <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                    )}
-                                  </Tooltip>
-                                ))}
+                                      }
+                                      placement="top"
+                                      arrow
+                                    >
+                                      {isImportant ? (
+                                        <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                          <Box className="rainbow-inner">
+                                            <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                                          </Box>
+                                        </Box>
+                                      ) : (
+                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
+                                      )}
+                                    </Tooltip>
+                                  )
+                                })}
                               </Box>
                             )
                           })}
@@ -471,19 +540,42 @@ export function TempSnapshotModal(props: {
 
                             return (
                               <Box key={key} display="flex" gap={1} alignItems="center">
-                                {Array.from({ length: displayQty }).map((_, idx) => (
-                                  <Tooltip key={`${key}-img-${idx}`} title={<Typography variant="caption">{cardName ?? cardId}</Typography>} placement="top" arrow>
-                                    {isImportant ? (
-                                      <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                        <Box className="rainbow-inner">
-                                          <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                                {Array.from({ length: displayQty }).map((_, idx) => {
+                                  const imgKey = `${key}-img-${idx}`
+                                  const imgSrcNormal = cardId ? `https://cards.scryfall.io/normal/front/${cardId.charAt(0)}/${cardId.charAt(1)}/${cardId}.jpg` : null
+                                  return (
+                                    <Tooltip
+                                      key={imgKey}
+                                      title={
+                                        <Box>
+                                          {imgSrcNormal ? (
+                                            <Box
+                                              component="img"
+                                              src={imgSrcNormal}
+                                              alt={cardName ?? cardId}
+                                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                              loading="lazy"
+                                              onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                            />
+                                          ) : null}
+                                          <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
                                         </Box>
-                                      </Box>
-                                    ) : (
-                                      <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
-                                    )}
-                                  </Tooltip>
-                                ))}
+                                      }
+                                      placement="top"
+                                      arrow
+                                    >
+                                      {isImportant ? (
+                                        <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                          <Box className="rainbow-inner">
+                                            <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }} loading="lazy" />
+                                          </Box>
+                                        </Box>
+                                      ) : (
+                                        <Box component="img" src={imgSrcThumb} alt={cardName ?? cardId ?? ''} sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }} loading="lazy" />
+                                      )}
+                                    </Tooltip>
+                                  )
+                                })}
                               </Box>
                             )
                           })}
