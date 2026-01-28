@@ -638,55 +638,56 @@ export default function DeckEditor() {
                           const displayQty = Math.min(qty, 8)
 
                           return (
-                            <Tooltip
-                              key={key}
-                              title={
-                                <Box>
-                                  {imgSrcNormal ? (
-                                    <Box
-                                      component="img"
-                                      src={imgSrcNormal}
-                                      alt={cardName || cardId || ''}
-                                      sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                      loading="lazy"
-                                    />
-                                  ) : null}
-                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                </Box>
-                              }
-                              placement="top"
-                              arrow
-                            >
-                              <Box display="flex" gap={1} alignItems="center">
-                                {Array.from({ length: displayQty }).map((_, idx) => {
-                                  const imgKey = `${key}-img-${idx}`
-                                  return isImportant ? (
-                                    <Box key={imgKey} className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                      <Box className="rainbow-inner">
-                                        <Box
-                                          component="img"
-                                          src={imgSrcThumb}
-                                          alt={cardName ?? cardId ?? ''}
-                                          sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block' }}
-                                          loading="lazy"
-                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                        />
+                            <Box display="flex" gap={1} alignItems="center">
+                              {Array.from({ length: displayQty }).map((_, idx) => {
+                                const imgKey = `${key}-img-${idx}`
+                                return (
+                                  <Tooltip
+                                    key={imgKey}
+                                    title={
+                                      <Box>
+                                        {imgSrcNormal ? (
+                                          <Box
+                                            component="img"
+                                            src={imgSrcNormal}
+                                            alt={cardName || cardId || ''}
+                                            sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                            loading="lazy"
+                                          />
+                                        ) : null}
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
                                       </Box>
-                                    </Box>
-                                  ) : (
-                                    <Box
-                                      key={imgKey}
-                                      component="img"
-                                      src={imgSrcThumb}
-                                      alt={cardName ?? cardId ?? ''}
-                                      sx={{ height: 80, width: 'auto', borderRadius: 1 }}
-                                      loading="lazy"
-                                      onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                    />
-                                  )
-                                })}
-                              </Box>
-                            </Tooltip>
+                                    }
+                                    placement="top"
+                                    arrow
+                                  >
+                                    {isImportant ? (
+                                      <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                        <Box className="rainbow-inner">
+                                          <Box
+                                            component="img"
+                                            src={imgSrcThumb}
+                                            alt={cardName ?? cardId ?? ''}
+                                            sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
+                                            loading="lazy"
+                                            onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                          />
+                                        </Box>
+                                      </Box>
+                                    ) : (
+                                      <Box
+                                        component="img"
+                                        src={imgSrcThumb}
+                                        alt={cardName ?? cardId ?? ''}
+                                        sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                                        loading="lazy"
+                                        onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                      />
+                                    )}
+                                  </Tooltip>
+                                )
+                              })}
+                            </Box>
                           )
                         })}
                       </Box>
@@ -719,58 +720,56 @@ export default function DeckEditor() {
                           const displayQty = Math.min(qty, 8)
 
                           return (
-                            <Tooltip
-                              key={key}
-                              title={
-                                <Box>
-                                  {imgSrcNormal ? (
-                                    <Box
-                                      component="img"
-                                      src={imgSrcNormal}
-                                      alt={cardName || cardId || ''}
-                                      sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                                      loading="lazy"
-                                    />
-                                  ) : null}
-                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
-                                  {card.quantity && card.quantity > 1 ? (
-                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.25 }}>Quantity: {card.quantity}</Typography>
-                                  ) : null}
-                                </Box>
-                              }
-                              placement="top"
-                              arrow
-                            >
-                              <Box display="flex" gap={1} alignItems="center">
-                                {Array.from({ length: displayQty }).map((_, idx) => {
-                                  const imgKey = `${key}-img-${idx}`
-                                  return isImportant ? (
-                                    <Box key={imgKey} className="rainbow-border" sx={{ display: 'inline-block' }}>
-                                      <Box className="rainbow-inner">
-                                        <Box
-                                          component="img"
-                                          src={imgSrcThumb}
-                                          alt={cardName ?? cardId ?? ''}
-                                          sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
-                                          loading="lazy"
-                                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                        />
+                            <Box display="flex" gap={1} alignItems="center">
+                              {Array.from({ length: displayQty }).map((_, idx) => {
+                                const imgKey = `${key}-img-${idx}`
+                                return (
+                                  <Tooltip
+                                    key={imgKey}
+                                    title={
+                                      <Box>
+                                        {imgSrcNormal ? (
+                                          <Box
+                                            component="img"
+                                            src={imgSrcNormal}
+                                            alt={cardName || cardId || ''}
+                                            sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                            loading="lazy"
+                                          />
+                                        ) : null}
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{cardName ?? cardId}</Typography>
                                       </Box>
-                                    </Box>
-                                  ) : (
-                                    <Box
-                                      key={imgKey}
-                                      component="img"
-                                      src={imgSrcThumb}
-                                      alt={cardName ?? cardId ?? ''}
-                                      sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
-                                      loading="lazy"
-                                      onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
-                                    />
-                                  )
-                                })}
-                              </Box>
-                            </Tooltip>
+                                    }
+                                    placement="top"
+                                    arrow
+                                  >
+                                    {isImportant ? (
+                                      <Box className="rainbow-border" sx={{ display: 'inline-block' }}>
+                                        <Box className="rainbow-inner">
+                                          <Box
+                                            component="img"
+                                            src={imgSrcThumb}
+                                            alt={cardName ?? cardId ?? ''}
+                                            sx={{ height: 80, width: 'auto', borderRadius: '4px', display: 'block', opacity: 0.6 }}
+                                            loading="lazy"
+                                            onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                          />
+                                        </Box>
+                                      </Box>
+                                    ) : (
+                                      <Box
+                                        component="img"
+                                        src={imgSrcThumb}
+                                        alt={cardName ?? cardId ?? ''}
+                                        sx={{ height: 80, width: 'auto', borderRadius: 1, opacity: 0.6 }}
+                                        loading="lazy"
+                                        onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://svgs.scryfall.io/card-symbols/mana.svg` }}
+                                      />
+                                    )}
+                                  </Tooltip>
+                                )
+                              })}
+                            </Box>
                           )
                         })}
                       </Box>
