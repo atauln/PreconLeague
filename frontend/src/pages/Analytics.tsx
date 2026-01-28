@@ -600,11 +600,7 @@ export default function Analytics() {
   const [showSalt, setShowSalt] = useState(true)
   const [showPowerLevel, setShowPowerLevel] = useState(true)
   const [showSynergy, setShowSynergy] = useState(true)
-  const [showThreat, setShowThreat] = useState(true)
-  const [showCombo, setShowCombo] = useState(true)
   const [showManabase, setShowManabase] = useState(true)
-  const [showManaFixing, setShowManaFixing] = useState(true)
-  const [showCompetitiveIntent, setShowCompetitiveIntent] = useState(true)
   const [showCardQuality, setShowCardQuality] = useState(true)
   const [metricsAnchorEl, setMetricsAnchorEl] = useState<HTMLElement | null>(null)
   const metricsOpen = Boolean(metricsAnchorEl)
@@ -739,11 +735,7 @@ export default function Analytics() {
   const saltSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: s.salt_rating ?? null })), [weeklySnapshots])
   const powerLevelSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).power_level_rating ?? null })), [weeklySnapshots])
   const synergySeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).synergy_rating ?? null })), [weeklySnapshots])
-  const threatSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).threat_rating ?? null })), [weeklySnapshots])
-  const comboSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).combo_rating ?? null })), [weeklySnapshots])
   const manabaseSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).manabase_score ?? null })), [weeklySnapshots])
-  const manaFixingSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).mana_fixing_score ?? null })), [weeklySnapshots])
-  const competitiveIntentSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).competitive_intent ?? null })), [weeklySnapshots])
   const cardQualitySeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).card_quality ?? null })), [weeklySnapshots])
 
   const metrics = [
@@ -752,11 +744,7 @@ export default function Analytics() {
     { id: 'salt_rating', label: 'Salt Rating' },
     { id: 'power_level_rating', label: 'Power Level' },
     { id: 'synergy_rating', label: 'Synergy' },
-    { id: 'threat_rating', label: 'Threat' },
-    { id: 'combo_rating', label: 'Combo' },
     { id: 'manabase_score', label: 'Manabase Score' },
-    { id: 'mana_fixing_score', label: 'Mana Fixing Score' },
-    { id: 'competitive_intent', label: 'Competitive Intent' },
     { id: 'card_quality', label: 'Card Quality' },
   ]
 
@@ -886,35 +874,19 @@ export default function Analytics() {
             <ListItemIcon><Checkbox edge="start" checked={showSynergy} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
             <ListItemText>Synergy</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => { setShowThreat(!showThreat) }}>
-            <ListItemIcon><Checkbox edge="start" checked={showThreat} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
-            <ListItemText>Threat</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setShowCombo(!showCombo) }}>
-            <ListItemIcon><Checkbox edge="start" checked={showCombo} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
-            <ListItemText>Combo</ListItemText>
-          </MenuItem>
           <MenuItem onClick={() => { setShowManabase(!showManabase) }}>
             <ListItemIcon><Checkbox edge="start" checked={showManabase} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
             <ListItemText>Manabase</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setShowManaFixing(!showManaFixing) }}>
-            <ListItemIcon><Checkbox edge="start" checked={showManaFixing} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
-            <ListItemText>Mana Fixing</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => { setShowCompetitiveIntent(!showCompetitiveIntent) }}>
-            <ListItemIcon><Checkbox edge="start" checked={showCompetitiveIntent} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
-            <ListItemText>Competitive Intent</ListItemText>
           </MenuItem>
           <MenuItem onClick={() => { setShowCardQuality(!showCardQuality) }}>
             <ListItemIcon><Checkbox edge="start" checked={showCardQuality} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
             <ListItemText>Card Quality</ListItemText>
           </MenuItem>
           <Divider />
-          <MenuItem onClick={() => { setShowOverall(true); setShowBracket(true); setShowSalt(true); setShowPowerLevel(true); setShowSynergy(true); setShowThreat(true); setShowCombo(true); setShowManabase(true); setShowManaFixing(true); setShowCompetitiveIntent(true); setShowCardQuality(true); closeMetricsMenu() }}>
+          <MenuItem onClick={() => { setShowOverall(true); setShowBracket(true); setShowSalt(true); setShowPowerLevel(true); setShowSynergy(true); setShowCardQuality(true); closeMetricsMenu() }}>
             <ListItemText>Select All</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => { setShowOverall(false); setShowBracket(false); setShowSalt(false); setShowPowerLevel(false); setShowSynergy(false); setShowThreat(false); setShowCombo(false); setShowManabase(false); setShowManaFixing(false); setShowCompetitiveIntent(false); setShowCardQuality(false); closeMetricsMenu() }}>
+          <MenuItem onClick={() => { setShowOverall(false); setShowBracket(false); setShowSalt(false); setShowPowerLevel(false); setShowSynergy(false); setShowCardQuality(false); closeMetricsMenu() }}>
             <ListItemText>Clear All</ListItemText>
           </MenuItem>
         </Menu>
@@ -1016,34 +988,10 @@ export default function Analytics() {
                     <LineChart data={synergySeries} stroke="#0277bd" />
                   </Box>
                 )}
-                {showThreat && (
-                  <Box>
-                    <Typography variant="subtitle2">Threat</Typography>
-                    <LineChart data={threatSeries} stroke="#d32f2f" />
-                  </Box>
-                )}
-                {showCombo && (
-                  <Box>
-                    <Typography variant="subtitle2">Combo</Typography>
-                    <LineChart data={comboSeries} stroke="#6a1b9a" />
-                  </Box>
-                )}
                 {showManabase && (
                   <Box>
                     <Typography variant="subtitle2">Manabase Score</Typography>
                     <LineChart data={manabaseSeries} stroke="#f9a825" />
-                  </Box>
-                )}
-                {showManaFixing && (
-                  <Box>
-                    <Typography variant="subtitle2">Mana Fixing Score</Typography>
-                    <LineChart data={manaFixingSeries} stroke="#00796b" />
-                  </Box>
-                )}
-                {showCompetitiveIntent && (
-                  <Box>
-                    <Typography variant="subtitle2">Competitive Intent</Typography>
-                    <LineChart data={competitiveIntentSeries} stroke="#5d4037" />
                   </Box>
                 )}
                 {/* Commander Tier removed */}
