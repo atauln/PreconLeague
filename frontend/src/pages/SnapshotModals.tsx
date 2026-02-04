@@ -210,7 +210,7 @@ export function SnapshotDetailsModal(props: {
               Warning: The difference between added and removed cards is not zero. Net change: {getQuantityofChangedCards(changedCards) > 0 ? '+' : ''}{getQuantityofChangedCards(changedCards)} cards.
             </Alert>
           )}
-          <Typography variant="subtitle1">Library changes</Typography>
+          <Typography variant="subtitle1">Library changes [{changedCards?.added.length}]</Typography>
           <Box mt={1}>
             {changedCardsLoading ? (
               <Box display="flex" justifyContent="center"><CircularProgress size={20} /></Box>
@@ -400,7 +400,7 @@ export function TempSnapshotModal(props: {
               </TableBody>
             </Table>
             <Box mt={2}>
-              <Typography variant="subtitle1">Library changes</Typography>
+              <Typography variant="subtitle1">Library changes [{(tempSnapshot as any).added_cards.length}]</Typography>
               <Box mt={1}>
                 {((tempSnapshot as any).added_cards || []).length === 0 && ((tempSnapshot as any).removed_cards || []).length === 0 ? (
                   <Typography color="text.secondary">No changes detected from most recent saved snapshot</Typography>
