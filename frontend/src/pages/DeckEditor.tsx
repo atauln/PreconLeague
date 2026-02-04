@@ -488,11 +488,11 @@ export default function DeckEditor() {
                 <Typography sx={{ ml: 2, color: 'text.secondary' }}>{groups[wk].length} snapshot(s)</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{ display: 'flex', flexWrap: 'wrap' }}>
                   {groups[wk].map((s) => (
-                    <Grid key={s.snapshot_id}>
-                      <Card>
-                        <CardContent>
+                    <Grid key={s.snapshot_id} sx={{ boxSizing: 'border-box', width: { xs: '100%', sm: '50%', md: '32%' } }}>
+                      <Card sx={{ height: 120 }}>
+                        <CardContent sx={{ height: '100%', boxSizing: 'border-box' }}>
                           <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                             <Typography variant="subtitle1">{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</Typography>
                             <Typography color="text.secondary">{formatDate(s.created_at)}</Typography>
