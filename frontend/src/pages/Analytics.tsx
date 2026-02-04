@@ -602,6 +602,7 @@ export default function Analytics() {
   const [showSynergy, setShowSynergy] = useState(true)
   const [showManabase, setShowManabase] = useState(true)
   const [showCardQuality, setShowCardQuality] = useState(true)
+  const [showPrice, setShowPrice] = useState(true)
   const [metricsAnchorEl, setMetricsAnchorEl] = useState<HTMLElement | null>(null)
   const metricsOpen = Boolean(metricsAnchorEl)
 
@@ -737,6 +738,7 @@ export default function Analytics() {
   const synergySeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).synergy_rating ?? null })), [weeklySnapshots])
   const manabaseSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).manabase_score ?? null })), [weeklySnapshots])
   const cardQualitySeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).card_quality ?? null })), [weeklySnapshots])
+  const priceSeries = useMemo(() => weeklySnapshots.map((s) => ({ x: getWeekKey(s), y: (s as any).price_usd ?? null })), [weeklySnapshots])
 
   const metrics = [
     { id: 'overall_rating', label: 'Overall Rating' },
@@ -746,6 +748,7 @@ export default function Analytics() {
     { id: 'synergy_rating', label: 'Synergy' },
     { id: 'manabase_score', label: 'Manabase Score' },
     { id: 'card_quality', label: 'Card Quality' },
+    { id: 'price_usd', label: 'Price (USD)' },
   ]
 
   // For the "All Decks" view: compute per-week averages across decks for each metric
@@ -882,11 +885,15 @@ export default function Analytics() {
             <ListItemIcon><Checkbox edge="start" checked={showCardQuality} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
             <ListItemText>Card Quality</ListItemText>
           </MenuItem>
+          <MenuItem onClick={() => { setShowPrice(!showPrice) }}>
+            <ListItemIcon><Checkbox edge="start" checked={showPrice} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
+            <ListItemText>Price (USD)</ListItemText>
+          </MenuItem>
           <Divider />
-          <MenuItem onClick={() => { setShowOverall(true); setShowBracket(true); setShowSalt(true); setShowPowerLevel(true); setShowSynergy(true); setShowCardQuality(true); closeMetricsMenu() }}>
+          <MenuItem onClick={() => { setShowOverall(true); setShowBracket(true); setShowSalt(true); setShowPowerLevel(true); setShowSynergy(true); setShowCardQuality(true); setShowPrice(true); closeMetricsMenu() }}>
             <ListItemText>Select All</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => { setShowOverall(false); setShowBracket(false); setShowSalt(false); setShowPowerLevel(false); setShowSynergy(false); setShowCardQuality(false); closeMetricsMenu() }}>
+          <MenuItem onClick={() => { setShowOverall(false); setShowBracket(false); setShowSalt(false); setShowPowerLevel(false); setShowSynergy(false); setShowCardQuality(false); setShowPrice(false); closeMetricsMenu() }}>
             <ListItemText>Clear All</ListItemText>
           </MenuItem>
         </Menu>
@@ -1001,6 +1008,12 @@ export default function Analytics() {
                     <LineChart data={cardQualitySeries} stroke="#f57c00" />
                   </Box>
                 )}
+                {showPrice && (
+                  <Box>
+                    <Typography variant="subtitle2">Price (USD)</Typography>
+                    <LineChart data={priceSeries} stroke="#607d8b" />
+                  </Box>
+                )}
               </Box>
             </Paper>
           )}
@@ -1016,7 +1029,7 @@ export default function Analytics() {
                   <Typography>Based on {allDecksSnapshots.length} decks — most recent week: {allDecksAverages.weeklyKeys.length ? allDecksAverages.weeklyKeys[allDecksAverages.weeklyKeys.length - 1] : '—'}</Typography>
                   <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2, mt: 1 }}>
                     {metrics.map((m) => (
-                      <Typography key={m.id}>{m.label}: {formatNumber(allDecksAverages.latestByMetric.get(m.id) ?? null)}</Typography>
+                      <Typography key={m.id}>{m.label}: {m.id === 'price_usd' ? (allDecksAverages.latestByMetric.get(m.id) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(allDecksAverages.latestByMetric.get(m.id) as number) : '—') : formatNumber(allDecksAverages.latestByMetric.get(m.id) ?? null)}</Typography>
                     ))}
                   </Box>
                 </Box>
