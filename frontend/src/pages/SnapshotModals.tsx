@@ -1,4 +1,5 @@
 import type { Dispatch, JSX, SetStateAction } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Button,
@@ -15,7 +16,8 @@ import {
   Typography,
   TextField,
   MenuItem,
-  Grid
+  Grid,
+  Chip
 } from '@mui/material'
 import CardImageTooltip from '../components/CardImageTooltip'
 
@@ -94,6 +96,9 @@ export function SnapshotDetailsModal(props: {
     changedCardsLoading,
     getQuantityofChangedCards,
   } = props
+
+  const [showLibraryDetails, setShowLibraryDetails] = useState(false)
+  const netChange = changedCards ? getQuantityofChangedCards(changedCards) : 0
 
   // local aliases for consistency
   const fmtNum = (v?: number | null, mfd = 1) => (props as any).formatNumber ? (props as any).formatNumber(v, mfd) : (v === null || v === undefined ? '—' : String(v))
@@ -204,88 +209,98 @@ export function SnapshotDetailsModal(props: {
                 <TableCell sx={{ fontWeight: 'bold' }}>Library changes</TableCell>
                 <TableCell>
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1 }}>[{changedCards?.added.length ?? 0} added]</Typography>
+                    <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+                      <Chip
+                        label={changedCards?.added.length}
+                        color='default'
+                        size="small"
+                      />
+                      <Button size="small" onClick={() => setShowLibraryDetails((p) => !p)} sx={{ ml: 'auto' }}>{showLibraryDetails ? 'Hide' : 'Show'} details</Button>
+                    </Box>
+
                     {changedCardsLoading ? (
                       <Box display="flex" justifyContent="center"><CircularProgress size={18} /></Box>
                     ) : changedCards ? (
-                      <Grid container spacing={2}>
-                        <Grid>
-                          <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
-                          {changedCards.added.length === 0 ? (
-                            <Typography color="text.secondary">None</Typography>
-                          ) : (
-                            <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                              {changedCards.added.map((card, i) => {
-                                const cardId = card.card_id ?? null
-                                const fetched = cardId ? fetchCardObject(cardId) : null
-                                const cached = cardId ? cardCache[cardId] : null
-                                const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
-                                const key = `added-${cardId || cardName}-${i}`
-                                const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
-                                const displayQty = Math.min(qty, 8)
-                                const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
-                                const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                                const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                      showLibraryDetails ? (
+                        <Grid container spacing={2}>
+                          <Grid>
+                            <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
+                            {changedCards.added.length === 0 ? (
+                              <Typography color="text.secondary">None</Typography>
+                            ) : (
+                              <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                                {changedCards.added.map((card, i) => {
+                                  const cardId = card.card_id ?? null
+                                  const fetched = cardId ? fetchCardObject(cardId) : null
+                                  const cached = cardId ? cardCache[cardId] : null
+                                  const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                                  const key = `added-${cardId || cardName}-${i}`
+                                  const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                                  const displayQty = Math.min(qty, 8)
+                                  const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                                  const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                                  const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
-                                return (
-                                  <Box key={key} display="flex" gap={1} alignItems="center">
-                                    {Array.from({ length: displayQty }).map((_, idx) => {
-                                      const imgKey = `${key}-img-${idx}`
-                                      return (
-                                        <CardImageTooltip
-                                          key={imgKey}
-                                          cardId={cardId}
-                                          cardName={cardName}
-                                          isImportant={isImportant}
-                                          thumbHeight={64}
-                                        />
-                                      )
-                                    })}
-                                  </Box>
-                                )
-                              })}
-                            </Box>
-                          )}
-                        </Grid>
-                        <Grid>
-                          <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
-                          {changedCards.removed.length === 0 ? (
-                            <Typography color="text.secondary">None</Typography>
-                          ) : (
-                            <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                              {changedCards.removed.map((card, i) => {
-                                const cardId = card.card_id ?? null
-                                const fetched = cardId ? fetchCardObject(cardId) : null
-                                const cached = cardId ? cardCache[cardId] : null
-                                const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
-                                const key = `removed-${cardId || cardName}-${i}`
-                                const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
-                                const displayQty = Math.min(qty, 8)
-                                const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
-                                const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                                const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                                  return (
+                                    <Box key={key} display="flex" gap={1} alignItems="center">
+                                      {Array.from({ length: displayQty }).map((_, idx) => {
+                                        const imgKey = `${key}-img-${idx}`
+                                        return (
+                                          <CardImageTooltip
+                                            key={imgKey}
+                                            cardId={cardId}
+                                            cardName={cardName}
+                                            isImportant={isImportant}
+                                            thumbHeight={64}
+                                          />
+                                        )
+                                      })}
+                                    </Box>
+                                  )
+                                })}
+                              </Box>
+                            )}
+                          </Grid>
+                          <Grid>
+                            <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
+                            {changedCards.removed.length === 0 ? (
+                              <Typography color="text.secondary">None</Typography>
+                            ) : (
+                              <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                                {changedCards.removed.map((card, i) => {
+                                  const cardId = card.card_id ?? null
+                                  const fetched = cardId ? fetchCardObject(cardId) : null
+                                  const cached = cardId ? cardCache[cardId] : null
+                                  const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                                  const key = `removed-${cardId || cardName}-${i}`
+                                  const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                                  const displayQty = Math.min(qty, 8)
+                                  const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                                  const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                                  const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
-                                return (
-                                  <Box key={key} display="flex" gap={1} alignItems="center">
-                                    {Array.from({ length: displayQty }).map((_, idx) => {
-                                      const imgKey = `${key}-img-${idx}`
-                                      return (
-                                        <CardImageTooltip
-                                          key={imgKey}
-                                          cardId={cardId}
-                                          cardName={cardName}
-                                          isImportant={isImportant}
-                                          thumbHeight={64}
-                                        />
-                                      )
-                                    })}
-                                  </Box>
-                                )
-                              })}
-                            </Box>
-                          )}
+                                  return (
+                                    <Box key={key} display="flex" gap={1} alignItems="center">
+                                      {Array.from({ length: displayQty }).map((_, idx) => {
+                                        const imgKey = `${key}-img-${idx}`
+                                        return (
+                                          <CardImageTooltip
+                                            key={imgKey}
+                                            cardId={cardId}
+                                            cardName={cardName}
+                                            isImportant={isImportant}
+                                            thumbHeight={64}
+                                          />
+                                        )
+                                      })}
+                                    </Box>
+                                  )
+                                })}
+                              </Box>
+                            )}
+                          </Grid>
                         </Grid>
-                      </Grid>
+                      ) : null
                     ) : (
                       <Typography color="text.secondary">No comparison snapshot available</Typography>
                     )}
@@ -317,6 +332,7 @@ export function TempSnapshotModal(props: {
   formatCurrency: (v?: number | null) => string
 }) {
   const { open, onClose, tempSnapshot, tempPrevSnapshot, fetchCardObject, cardCache, getCardName, formatNumber, formatCurrency } = props
+  const [showTempLibraryDetails, setShowTempLibraryDetails] = useState(false)
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -399,91 +415,106 @@ export function TempSnapshotModal(props: {
               </TableBody>
             </Table>
             <Box mt={2}>
-              <Typography variant="subtitle1">Library changes [{(tempSnapshot as any).added_cards.length}]</Typography>
-              <Box mt={1}>
-                {((tempSnapshot as any).added_cards || []).length === 0 && ((tempSnapshot as any).removed_cards || []).length === 0 ? (
-                  <Typography color="text.secondary">No changes detected from most recent saved snapshot</Typography>
-                ) : (
-                  <Grid container spacing={2}>
-                    <Grid>
-                      <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
-                      {((tempSnapshot as any).added_cards || []).length === 0 ? (
-                        <Typography color="text.secondary">None</Typography>
-                      ) : (
-                        <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                          {((tempSnapshot as any).added_cards || []).map((card: any, i: number) => {
-                            const cardId = card.card_id ?? null
-                            const fetched = cardId ? fetchCardObject(cardId) : null
-                            const cached = cardId ? cardCache[cardId] : null
-                            const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
-                            const key = `temp-added-${cardId || cardName}-${i}`
-                            const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
-                            const displayQty = Math.min(qty, 8)
-                            const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
-                            const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                            const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+              {(((tempSnapshot as any).added_cards || []).length > 0 || ((tempSnapshot as any).removed_cards || []).length > 0) ? (
+                <Box>
+                  <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+                    {(() => {
+                      const addedQty = ((tempSnapshot as any).added_cards || []).reduce((sum: number, c: any) => sum + (c.quantity || 0), 0)
+                      const removedQty = ((tempSnapshot as any).removed_cards || []).reduce((sum: number, c: any) => sum + (c.quantity || 0), 0)
+                      const net = addedQty - removedQty
+                      return (
+                        <Chip label={net > 0 ? `+${net}` : String(net)} color={net > 0 ? 'success' : net < 0 ? 'error' : 'default'} size="small" />
+                      )
+                    })()}
+                    <Typography variant="subtitle1">Library changes [{(tempSnapshot as any).added_cards.length}]</Typography>
+                    <Button size="small" onClick={() => setShowTempLibraryDetails((p) => !p)} sx={{ ml: 'auto' }}>{showTempLibraryDetails ? 'Hide' : 'Show'} details</Button>
+                  </Box>
+                  {showTempLibraryDetails ? (
+                    <Box mt={1}>
+                      <Grid container spacing={2}>
+                        <Grid>
+                          <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
+                          {((tempSnapshot as any).added_cards || []).length === 0 ? (
+                            <Typography color="text.secondary">None</Typography>
+                          ) : (
+                            <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                              {((tempSnapshot as any).added_cards || []).map((card: any, i: number) => {
+                                const cardId = card.card_id ?? null
+                                const fetched = cardId ? fetchCardObject(cardId) : null
+                                const cached = cardId ? cardCache[cardId] : null
+                                const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                                const key = `temp-added-${cardId || cardName}-${i}`
+                                const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                                const displayQty = Math.min(qty, 8)
+                                const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                                const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                                const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
-                            return (
-                              <Box key={key} display="flex" gap={1} alignItems="center">
-                                {Array.from({ length: displayQty }).map((_, idx) => {
-                                  const imgKey = `${key}-img-${idx}`
-                                  return (
-                                    <CardImageTooltip
-                                      key={imgKey}
-                                      cardId={cardId}
-                                      cardName={cardName}
-                                      isImportant={isImportant}
-                                      thumbHeight={80}
-                                    />
-                                  )
-                                })}
-                              </Box>
-                            )
-                          })}
-                        </Box>
-                      )}
-                    </Grid>
-                    <Grid>
-                      <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
-                      {((tempSnapshot as any).removed_cards || []).length === 0 ? (
-                        <Typography color="text.secondary">None</Typography>
-                      ) : (
-                        <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                          {((tempSnapshot as any).removed_cards || []).map((card: any, i: number) => {
-                            const cardId = card.card_id ?? null
-                            const fetched = cardId ? fetchCardObject(cardId) : null
-                            const cached = cardId ? cardCache[cardId] : null
-                            const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
-                            const key = `temp-removed-${cardId || cardName}-${i}`
-                            const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
-                            const displayQty = Math.min(qty, 8)
-                            const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
-                            const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                            const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                                return (
+                                  <Box key={key} display="flex" gap={1} alignItems="center">
+                                    {Array.from({ length: displayQty }).map((_, idx) => {
+                                      const imgKey = `${key}-img-${idx}`
+                                      return (
+                                        <CardImageTooltip
+                                          key={imgKey}
+                                          cardId={cardId}
+                                          cardName={cardName}
+                                          isImportant={isImportant}
+                                          thumbHeight={80}
+                                        />
+                                      )
+                                    })}
+                                  </Box>
+                                )
+                              })}
+                            </Box>
+                          )}
+                        </Grid>
+                        <Grid>
+                          <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
+                          {((tempSnapshot as any).removed_cards || []).length === 0 ? (
+                            <Typography color="text.secondary">None</Typography>
+                          ) : (
+                            <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                              {((tempSnapshot as any).removed_cards || []).map((card: any, i: number) => {
+                                const cardId = card.card_id ?? null
+                                const fetched = cardId ? fetchCardObject(cardId) : null
+                                const cached = cardId ? cardCache[cardId] : null
+                                const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                                const key = `temp-removed-${cardId || cardName}-${i}`
+                                const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                                const displayQty = Math.min(qty, 8)
+                                const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                                const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                                const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
 
-                            return (
-                              <Box key={key} display="flex" gap={1} alignItems="center">
-                                {Array.from({ length: displayQty }).map((_, idx) => {
-                                  const imgKey = `${key}-img-${idx}`
-                                  return (
-                                    <CardImageTooltip
-                                      key={imgKey}
-                                      cardId={cardId}
-                                      cardName={cardName}
-                                      isImportant={isImportant}
-                                      thumbHeight={80}
-                                    />
-                                  )
-                                })}
-                              </Box>
-                            )
-                          })}
-                        </Box>
-                      )}
-                    </Grid>
-                  </Grid>
-                )}
-              </Box>
+                                return (
+                                  <Box key={key} display="flex" gap={1} alignItems="center">
+                                    {Array.from({ length: displayQty }).map((_, idx) => {
+                                      const imgKey = `${key}-img-${idx}`
+                                      return (
+                                        <CardImageTooltip
+                                          key={imgKey}
+                                          cardId={cardId}
+                                          cardName={cardName}
+                                          isImportant={isImportant}
+                                          thumbHeight={80}
+                                        />
+                                      )
+                                    })}
+                                  </Box>
+                                )
+                              })}
+                            </Box>
+                          )}
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  ) : null}
+                </Box>
+              ) : (
+                <Typography color="text.secondary">No changes detected from most recent saved snapshot</Typography>
+              )}
             </Box>
           </>
         ) : (
