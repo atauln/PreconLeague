@@ -200,104 +200,103 @@ export function SnapshotDetailsModal(props: {
                   )}
                 </TableCell>
               </TableRow>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold' }}>Library changes</TableCell>
+                <TableCell>
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>[{changedCards?.added.length ?? 0} added]</Typography>
+                    {changedCardsLoading ? (
+                      <Box display="flex" justifyContent="center"><CircularProgress size={18} /></Box>
+                    ) : changedCards ? (
+                      <Grid container spacing={2}>
+                        <Grid>
+                          <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
+                          {changedCards.added.length === 0 ? (
+                            <Typography color="text.secondary">None</Typography>
+                          ) : (
+                            <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                              {changedCards.added.map((card, i) => {
+                                const cardId = card.card_id ?? null
+                                const fetched = cardId ? fetchCardObject(cardId) : null
+                                const cached = cardId ? cardCache[cardId] : null
+                                const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                                const key = `added-${cardId || cardName}-${i}`
+                                const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                                const displayQty = Math.min(qty, 8)
+                                const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                                const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                                const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+
+                                return (
+                                  <Box key={key} display="flex" gap={1} alignItems="center">
+                                    {Array.from({ length: displayQty }).map((_, idx) => {
+                                      const imgKey = `${key}-img-${idx}`
+                                      return (
+                                        <CardImageTooltip
+                                          key={imgKey}
+                                          cardId={cardId}
+                                          cardName={cardName}
+                                          isImportant={isImportant}
+                                          thumbHeight={64}
+                                        />
+                                      )
+                                    })}
+                                  </Box>
+                                )
+                              })}
+                            </Box>
+                          )}
+                        </Grid>
+                        <Grid>
+                          <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
+                          {changedCards.removed.length === 0 ? (
+                            <Typography color="text.secondary">None</Typography>
+                          ) : (
+                            <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
+                              {changedCards.removed.map((card, i) => {
+                                const cardId = card.card_id ?? null
+                                const fetched = cardId ? fetchCardObject(cardId) : null
+                                const cached = cardId ? cardCache[cardId] : null
+                                const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
+                                const key = `removed-${cardId || cardName}-${i}`
+                                const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
+                                const displayQty = Math.min(qty, 8)
+                                const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
+                                const priceNum = priceStr ? parseFloat(priceStr as string) : null
+                                const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+
+                                return (
+                                  <Box key={key} display="flex" gap={1} alignItems="center">
+                                    {Array.from({ length: displayQty }).map((_, idx) => {
+                                      const imgKey = `${key}-img-${idx}`
+                                      return (
+                                        <CardImageTooltip
+                                          key={imgKey}
+                                          cardId={cardId}
+                                          cardName={cardName}
+                                          isImportant={isImportant}
+                                          thumbHeight={64}
+                                        />
+                                      )
+                                    })}
+                                  </Box>
+                                )
+                              })}
+                            </Box>
+                          )}
+                        </Grid>
+                      </Grid>
+                    ) : (
+                      <Typography color="text.secondary">No comparison snapshot available</Typography>
+                    )}
+                  </Box>
+                </TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         )}
 
-        <Box mt={2}>
-          {changedCards && getQuantityofChangedCards(changedCards) !== 0 && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Warning: The difference between added and removed cards is not zero. Net change: {getQuantityofChangedCards(changedCards) > 0 ? '+' : ''}{getQuantityofChangedCards(changedCards)} cards.
-            </Alert>
-          )}
-          <Typography variant="subtitle1">Library changes [{changedCards?.added.length}]</Typography>
-          <Box mt={1}>
-            {changedCardsLoading ? (
-              <Box display="flex" justifyContent="center"><CircularProgress size={20} /></Box>
-            ) : changedCards ? (
-              <Grid container spacing={2}>
-                <Grid>
-                  <Typography sx={{ fontWeight: 'bold' }}>Added</Typography>
-                  {changedCards.added.length === 0 ? (
-                    <Typography color="text.secondary">None</Typography>
-                  ) : (
-                    <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                      {changedCards.added.map((card, i) => {
-                        const cardId = card.card_id ?? null
-                        const fetched = cardId ? fetchCardObject(cardId) : null
-                        const cached = cardId ? cardCache[cardId] : null
-                        const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
-                        const key = `added-${cardId || cardName}-${i}`
-                        const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
-                        const displayQty = Math.min(qty, 8)
-                        const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
-                        const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                        const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
-
-                        return (
-                          <Box key={key} display="flex" gap={1} alignItems="center">
-                            {Array.from({ length: displayQty }).map((_, idx) => {
-                              const imgKey = `${key}-img-${idx}`
-                              return (
-                                <CardImageTooltip
-                                  key={imgKey}
-                                  cardId={cardId}
-                                  cardName={cardName}
-                                  isImportant={isImportant}
-                                  thumbHeight={80}
-                                />
-                              )
-                            })}
-                          </Box>
-                        )
-                      })}
-                    </Box>
-                  )}
-                </Grid>
-                <Grid>
-                  <Typography sx={{ fontWeight: 'bold' }}>Removed</Typography>
-                  {changedCards.removed.length === 0 ? (
-                    <Typography color="text.secondary">None</Typography>
-                  ) : (
-                    <Box display="flex" flexWrap="wrap" gap={1} mt={1}>
-                      {changedCards.removed.map((card, i) => {
-                        const cardId = card.card_id ?? null
-                        const fetched = cardId ? fetchCardObject(cardId) : null
-                        const cached = cardId ? cardCache[cardId] : null
-                        const cardName = card.card_name ?? (fetched?.name ?? cached?.name ?? cardId)
-                        const key = `removed-${cardId || cardName}-${i}`
-                        const qty = Number.isInteger(card.quantity as number) && (card.quantity as number) > 0 ? (card.quantity as number) : 1
-                        const displayQty = Math.min(qty, 8)
-                        const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
-                        const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                        const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
-
-                              return (
-                                <Box key={key} display="flex" gap={1} alignItems="center">
-                                  {Array.from({ length: displayQty }).map((_, idx) => {
-                                    const imgKey = `${key}-img-${idx}`
-                                    return (
-                                      <CardImageTooltip
-                                        key={imgKey}
-                                        cardId={cardId}
-                                        cardName={cardName}
-                                        isImportant={isImportant}
-                                        thumbHeight={80}
-                                      />
-                                    )
-                                  })}
-                                </Box>
-                              )
-                      })}
-                    </Box>
-                  )}
-                </Grid>
-              </Grid>
-            ) : (
-              <Typography color="text.secondary">No comparison snapshot available</Typography>
-            )}
-          </Box>
-        </Box>
+        
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
