@@ -235,7 +235,7 @@ export function SnapshotDetailsModal(props: {
                                   const displayQty = Math.min(qty, 8)
                                   const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
                                   const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                                  const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                                  const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 9
 
                                   return (
                                     <Box key={key} display="flex" gap={1} alignItems="center">
@@ -273,7 +273,7 @@ export function SnapshotDetailsModal(props: {
                                   const displayQty = Math.min(qty, 8)
                                   const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
                                   const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                                  const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                                  const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 9
 
                                   return (
                                     <Box key={key} display="flex" gap={1} alignItems="center">
@@ -436,7 +436,7 @@ export function TempSnapshotModal(props: {
                                       const displayQty = Math.min(qty, 8)
                                       const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
                                       const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                                      const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                                      const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 9
 
                                       return (
                                         <Box key={key} display="flex" gap={1} alignItems="center">
@@ -474,7 +474,7 @@ export function TempSnapshotModal(props: {
                                       const displayQty = Math.min(qty, 8)
                                       const priceStr = fetched?.prices?.usd ?? cached?.prices?.usd ?? null
                                       const priceNum = priceStr ? parseFloat(priceStr as string) : null
-                                      const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 7
+                                      const isImportant = priceNum !== null && !Number.isNaN(priceNum) && priceNum > 9
 
                                       return (
                                         <Box key={key} display="flex" gap={1} alignItems="center">
