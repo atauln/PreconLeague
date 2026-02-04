@@ -210,11 +210,7 @@ export function SnapshotDetailsModal(props: {
                 <TableCell>
                   <Box>
                     <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
-                      <Chip
-                        label={changedCards?.added.length}
-                        color='default'
-                        size="small"
-                      />
+                      <Chip label={(changedCards?.added || []).reduce((sum: number, c: any) => sum + (c.quantity || 0), 0)} color='default' size="small" />
                       <Button size="small" onClick={() => setShowLibraryDetails((p) => !p)} sx={{ ml: 'auto' }}>{showLibraryDetails ? 'Hide' : 'Show'} details</Button>
                     </Box>
 
