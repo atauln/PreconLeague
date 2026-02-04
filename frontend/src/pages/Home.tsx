@@ -239,14 +239,14 @@ export default function Home() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {!loading && !error && (
-        <Grid container spacing={0} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 4, display: 'flex', flexWrap: 'wrap' }}>
           {decks.length === 0 && (
-            <Grid><Typography>No decks found.</Typography></Grid>
+            <Grid sx={{ width: '100%' }}><Typography>No decks found.</Typography></Grid>
           )}
           {decks.map((d) => (
-            <Grid sx={{ mb: 2 }} key={d.deck_id} style={{ width: '100%' }}>
-              <Card >
-                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+            <Grid key={d.deck_id} sx={{ mb: 0, boxSizing: 'border-box', width: { xs: '100%'}}}>
+              <Card sx={{ height: 125 }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, height: '100%', boxSizing: 'border-box' }}>
                   <Box sx={{ minWidth: 25}}>
                     {d.colors.map((color) => (
                       <Avatar
