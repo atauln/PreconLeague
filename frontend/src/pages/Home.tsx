@@ -220,7 +220,6 @@ export default function Home() {
     <Container maxWidth={false} sx={{ py: 4, px: 2 }}>
       <Box mb={3}>
         <Typography variant="h5">Precon League — Home</Typography>
-        <Typography color="text.secondary">Choose a deck to edit (this demo is unauthenticated — any user can open any deck).</Typography>
       </Box>
 
       <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
