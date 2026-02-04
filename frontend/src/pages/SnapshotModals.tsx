@@ -12,7 +12,6 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
-  Alert,
   Typography,
   TextField,
   MenuItem,
@@ -94,11 +93,9 @@ export function SnapshotDetailsModal(props: {
     setCompareWeek,
     changedCards,
     changedCardsLoading,
-    getQuantityofChangedCards,
   } = props
 
   const [showLibraryDetails, setShowLibraryDetails] = useState(false)
-  const netChange = changedCards ? getQuantityofChangedCards(changedCards) : 0
 
   // local aliases for consistency
   const fmtNum = (v?: number | null, mfd = 1) => (props as any).formatNumber ? (props as any).formatNumber(v, mfd) : (v === null || v === undefined ? '—' : String(v))
