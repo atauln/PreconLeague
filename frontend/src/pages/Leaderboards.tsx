@@ -194,7 +194,7 @@ export default function Leaderboards() {
 
       {!loading && !error && (
         <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Paper>
+          <Paper sx={{ width: 'max-content' }}>
             <Table>
               <TableHead>
                 <TableRow>
