@@ -18,6 +18,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 
 interface SnapshotWithDeck {
@@ -59,6 +61,8 @@ const METRICS: { key: keyof SnapshotWithDeck; label: string }[] = [
 ]
 
 export default function Leaderboards() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [allSnapshots, setAllSnapshots] = useState<SnapshotWithDeck[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -193,44 +197,87 @@ export default function Leaderboards() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       {!loading && !error && (
-        <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <Paper sx={{ width: 'max-content' }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>#</TableCell>
-                  <TableCell>Deck</TableCell>
-                  <TableCell>Owner</TableCell>
-                  <TableCell align="right">{METRICS.find(m => m.key === selectedMetric)?.label}</TableCell>
-                  <TableCell align="right">Overall</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leaderboard.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5}><Typography sx={{ p: 2 }}>No data for the selected week.</Typography></TableCell>
-                  </TableRow>
-                )}
-                {leaderboard.map((row, idx) => (
-                  <TableRow key={row.snapshot_id}>
-                    <TableCell>{idx + 1}</TableCell>
-                    <TableCell sx={{ minWidth: '150px' }}>
+        <Box>
+          {/* Desktop / wide screens: keep table */}
+          {!isMobile && (
+            <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Paper sx={{ width: 'max-content' }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>#</TableCell>
+                      <TableCell>Deck</TableCell>
+                      <TableCell>Owner</TableCell>
+                      <TableCell align="right">{METRICS.find(m => m.key === selectedMetric)?.label}</TableCell>
+                      <TableCell align="right">Overall</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {leaderboard.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5}><Typography sx={{ p: 2 }}>No data for the selected week.</Typography></TableCell>
+                      </TableRow>
+                    )}
+                    {leaderboard.map((row, idx) => (
+                      <TableRow key={row.snapshot_id}>
+                        <TableCell>{idx + 1}</TableCell>
+                        <TableCell sx={{ minWidth: '150px' }}>
+                          {row.deck_id ? (
+                            <MuiLink component={RouterLink} to={`/decks/${row.deck_id}`} underline="hover" sx={{ wordBreak: 'break-word' }}>
+                              {row.deck_name ?? `Deck ${row.deck_id}`}
+                            </MuiLink>
+                          ) : (
+                            row.deck_name ?? `Deck ${row.deck_id}`
+                          )}
+                        </TableCell>
+                        <TableCell>{row.user_name ?? row.user_id ?? '—'}</TableCell>
+                        <TableCell align="right">{formatValue(row[selectedMetric], selectedMetric)}</TableCell>
+                        <TableCell align="right">{formatValue(row.overall_rating, 'overall_rating')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Paper>
+            </Box>
+          )}
+
+          {/* Mobile: show stacked cards for easy reading and tap targets */}
+          {isMobile && (
+            <Box>
+              {leaderboard.length === 0 && (
+                <Paper sx={{ p: 2, mb: 1 }}>
+                  <Typography>No data for the selected week.</Typography>
+                </Paper>
+              )}
+              {leaderboard.map((row, idx) => (
+                <Paper key={row.snapshot_id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center', gap: 2 }} elevation={1}>
+                  <Box sx={{ flex: '0 0 auto' }}>
+                    <Box sx={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 700 }}>
+                      <Typography variant="caption">{idx + 1}</Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography component="div" variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.1 }}>
                       {row.deck_id ? (
-                        <MuiLink component={RouterLink} to={`/decks/${row.deck_id}`} underline="hover" sx={{ wordBreak: 'break-word' }}>
+                        <MuiLink component={RouterLink} to={`/decks/${row.deck_id}`} underline="hover" sx={{ color: 'primary.light' }}>
                           {row.deck_name ?? `Deck ${row.deck_id}`}
                         </MuiLink>
                       ) : (
                         row.deck_name ?? `Deck ${row.deck_id}`
                       )}
-                    </TableCell>
-                    <TableCell>{row.user_name ?? row.user_id ?? '—'}</TableCell>
-                    <TableCell align="right">{formatValue(row[selectedMetric], selectedMetric)}</TableCell>
-                    <TableCell align="right">{formatValue(row.overall_rating, 'overall_rating')}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Paper>
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">{row.user_name ?? row.user_id ?? '—'}</Typography>
+                  </Box>
+
+                  <Box sx={{ flex: '0 0 96px', textAlign: 'right' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{formatValue(row[selectedMetric], selectedMetric)}</Typography>
+                    <Typography variant="caption" color="text.secondary">Overall: {formatValue(row.overall_rating, 'overall_rating')}</Typography>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
+          )}
         </Box>
       )}
     </Container>
