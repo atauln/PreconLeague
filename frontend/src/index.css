@@ -95,23 +95,3 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Prevent text overflow */
-.text-wrap {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
-}
-
-/* Responsive container with horizontal scroll */
-.scroll-container {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  max-width: 100%;
-}
-
-/* Ensure flex items can shrink properly */
-.flex-item {
-  min-width: 0;
-}
-

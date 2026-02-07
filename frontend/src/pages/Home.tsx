@@ -245,16 +245,16 @@ export default function Home() {
           )}
           {decks.map((d) => (
             <Grid key={d.deck_id} sx={{ mb: 0, boxSizing: 'border-box', width: { xs: '100%'}}}>
-              <Card sx={{ minHeight: 125 }}>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, minHeight: '100%', boxSizing: 'border-box', flexWrap: { xs: 'wrap', sm: 'nowrap' }, p: { xs: 2, sm: 2 } }}>
-                  <Box sx={{ minWidth: 25, display: { xs: 'none', sm: 'block' }}}>
+              <Card sx={{ minHeight: 125, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flex: 1, boxSizing: 'border-box', flexWrap: { xs: 'wrap', sm: 'nowrap' }, p: { xs: 2, sm: 2 } }}>
+                  <Box sx={{ minWidth: 25, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                     {d.colors.map((color) => (
                       <Avatar
                         key={color}
                         src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
                         alt={`${color} mana`}
                         variant="square"
-                        sx={{ width: 20, height: 20, bgcolor: 'transparent' }}
+                        sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 }, bgcolor: 'transparent' }}
                       />
                     ))}
                   </Box>

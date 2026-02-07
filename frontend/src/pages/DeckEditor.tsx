@@ -491,19 +491,19 @@ export default function DeckEditor() {
                 <Grid container spacing={2} sx={{ display: 'flex', flexWrap: 'wrap' }}>
                   {groups[wk].map((s) => (
                     <Grid key={s.snapshot_id} sx={{ boxSizing: 'border-box', width: { xs: '100%', sm: '50%', md: '33.333%' } }}>
-                      <Card sx={{ minHeight: 120 }}>
-                        <CardContent sx={{ minHeight: '100%', boxSizing: 'border-box' }}>
+                      <Card sx={{ minHeight: 120, display: 'flex', flexDirection: 'column' }}>
+                        <CardContent sx={{ flex: 1, boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
                           <Box display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={1}>
                             <Typography variant="subtitle1" sx={{ wordBreak: 'break-word' }}>{s.snapshot_name || `Snapshot ${s.snapshot_id}`}</Typography>
                             <Typography color="text.secondary" sx={{ fontSize: '0.875rem' }}>{formatDate(s.created_at)}</Typography>
                           </Box>
 
-                          <Box display="flex" alignItems="center" justifyContent="space-between" mt={1} flexWrap="wrap" gap={1}>
+                          <Box display="flex" alignItems="center" justifyContent="space-between" mt={1} flexWrap="wrap" gap={1} sx={{ flex: 1 }}>
                             <Box style={{ paddingRight: '1rem' }}>
                               <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>Commander: {getCardName(s.commander_id)}</Typography>
                               <Typography variant="body2">Power Level: {formatNumber(s.power_level_rating, 3)}</Typography>
                             </Box>
-                            <Box>
+                            <Box sx={{ alignSelf: 'flex-end' }}>
                               <Button variant="outlined" size="small" onClick={() => openDetails(s)} sx={{ mr: 1, minHeight: '44px' }}>Details</Button>
                             </Box>
                           </Box>
