@@ -222,13 +222,13 @@ export default function Home() {
         <Typography variant="h5">Precon League — Home</Typography>
       </Box>
 
-      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
+      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
         <Typography variant="h6">All decks</Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Button component={RouterLink} to="/leaderboards" variant="contained">Leaderboards</Button>
-          <Button component={RouterLink} to="/analytics" variant="outlined">Analytics</Button>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Button component={RouterLink} to="/leaderboards" variant="contained" size="small" sx={{ minHeight: '44px' }}>Leaderboards</Button>
+          <Button component={RouterLink} to="/analytics" variant="outlined" size="small" sx={{ minHeight: '44px' }}>Analytics</Button>
           <Tooltip title="Sample rules for the week">
-            <IconButton onClick={openRules} aria-label="weekly rules">
+            <IconButton onClick={openRules} aria-label="weekly rules" sx={{ minWidth: '44px', minHeight: '44px' }}>
               <InfoOutlined />
             </IconButton>
           </Tooltip>
@@ -245,9 +245,9 @@ export default function Home() {
           )}
           {decks.map((d) => (
             <Grid key={d.deck_id} sx={{ mb: 0, boxSizing: 'border-box', width: { xs: '100%'}}}>
-              <Card sx={{ height: 125 }}>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, height: '100%', boxSizing: 'border-box' }}>
-                  <Box sx={{ minWidth: 25}}>
+              <Card sx={{ minHeight: 125 }}>
+                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, minHeight: '100%', boxSizing: 'border-box', flexWrap: { xs: 'wrap', sm: 'nowrap' }, p: { xs: 2, sm: 2 } }}>
+                  <Box sx={{ minWidth: 25, display: { xs: 'none', sm: 'block' }}}>
                     {d.colors.map((color) => (
                       <Avatar
                         key={color}
@@ -300,17 +300,17 @@ export default function Home() {
                     )
                   })()}
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle1" noWrap>{d.deck_name}</Typography>
-                    <Typography color="text.secondary">Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
+                    <Typography variant="subtitle1" sx={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{d.deck_name}</Typography>
+                    <Typography color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, width: { xs: '100%', sm: 'auto' } }}>
                     {d.moxfield_deck_url && (
-                      <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer">View source</MuiLink>
+                      <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
                     )}
                     {d.archidekt_deck_url && (
-                      <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer">View source</MuiLink>
+                      <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
                     )}
-                    <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined">Edit</Button>
+                    <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined" size="small" sx={{ minHeight: '44px' }}>Edit</Button>
                   </Box>
                 </CardContent>
               </Card>
@@ -324,14 +324,15 @@ export default function Home() {
         <Typography color="text.secondary" sx={{ mb: 2 }}>Provide an Archidekt or Moxfield deck URL and click Submit to register it into the league.</Typography>
 
         <Box component="form" onSubmit={handleCreate} sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <FormControl sx={{ minWidth: 160 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <FormControl sx={{ minWidth: { xs: '100%', sm: 160 } }}>
               <InputLabel id="source-label">Source</InputLabel>
               <Select
                 labelId="source-label"
                 value={source}
                 label="Source"
                 onChange={(e) => setSource(e.target.value as 'moxfield' | 'archidekt')}
+                sx={{ minHeight: '56px' }}
               >
                 <MenuItem value="moxfield">Moxfield</MenuItem>
                 <MenuItem value="archidekt">Archidekt</MenuItem>
@@ -345,10 +346,10 @@ export default function Home() {
               placeholder="https://moxfield.com/decks..."
               required
               label="URL"
-              sx={{ flex: 1, minWidth: 240 }}
+              sx={{ flex: 1, minWidth: { xs: '100%', sm: 240 } }}
             />
 
-            <Button type="submit" variant="contained" disabled={creating} sx={{ whiteSpace: 'nowrap' }}>
+            <Button type="submit" variant="contained" disabled={creating} sx={{ whiteSpace: 'nowrap', minHeight: '56px', minWidth: { xs: '100%', sm: 'auto' } }}>
               {creating ? 'Creating…' : 'Submit'}
             </Button>
           </Box>

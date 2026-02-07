@@ -829,23 +829,24 @@ export default function Analytics() {
 
   return (
     <Container sx={{ py: 4 }} maxWidth="lg">
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
         <Typography variant="h5">Analytics</Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button component={RouterLink} to="/" variant="outlined">Home</Button>
+          <Button component={RouterLink} to="/" variant="outlined" size="small" sx={{ minHeight: '44px' }}>Home</Button>
         </Box>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Box mb={2} display="flex" gap={2} alignItems="center">
-        <FormControl size="small" sx={{ minWidth: 320 }}>
+      <Box mb={2} display="flex" gap={2} alignItems="center" flexWrap="wrap">
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 320 } }}>
           <InputLabel id="deck-select-label">Deck</InputLabel>
           <Select
             labelId="deck-select-label"
             label="Deck"
             value={selectedDeckId ?? ''}
             onChange={(e) => setSelectedDeckId(Number(e.target.value))}
+            sx={{ minHeight: '44px' }}
           >
             <MenuItem value={-1}>All Decks</MenuItem>
             {loadingDecks && <MenuItem value="">Loading…</MenuItem>}
@@ -855,7 +856,7 @@ export default function Analytics() {
           </Select>
         </FormControl>
 
-        <Button variant="outlined" onClick={openMetricsMenu}>Metrics ▾</Button>
+        <Button variant="outlined" onClick={openMetricsMenu} sx={{ minHeight: '44px' }}>Metrics ▾</Button>
         <Menu anchorEl={metricsAnchorEl} open={metricsOpen} onClose={closeMetricsMenu} MenuListProps={{ dense: true }}>
           <MenuItem onClick={() => { setShowOverall(!showOverall) }}>
             <ListItemIcon><Checkbox edge="start" checked={showOverall} tabIndex={-1} disableRipple size="small" /></ListItemIcon>
@@ -906,19 +907,19 @@ export default function Analytics() {
           {selectedDeckId === -1 ? (
             <Paper sx={{ mb: 2, p: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                     <Typography variant="h6">All Decks — Metric view</Typography>
                     <Typography variant="body2" color="text.secondary">Shows the newest snapshot per week for each deck — one metric at a time.</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 2, gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Checkbox size="small" checked={showDeckLines} onChange={(e) => setShowDeckLines(e.target.checked)} />
                       <Typography variant="body2">Show deck lines</Typography>
                     </Box>
                   </Box>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                   <Tabs value={metricIndex} onChange={(_, v) => setMetricIndex(v)} variant="scrollable" scrollButtons="auto" aria-label="metric tabs">
                     {metrics.map((m, idx) => (
                       <Tab key={m.id} label={m.label} value={idx} />
@@ -964,7 +965,7 @@ export default function Analytics() {
                 <Typography variant="h6">Trend charts</Typography>
                 <Typography variant="body2" color="text.secondary">Shows historical snapshot metrics for the selected deck.</Typography>
               </Box>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 2, p: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(auto-fit, minmax(300px, 1fr))' }, gap: 2, p: 2 }}>
                 {showOverall && (
                   <Box>
                     <Typography variant="subtitle2">Overall Rating</Typography>
@@ -1027,7 +1028,7 @@ export default function Analytics() {
               ) : (
                 <Box sx={{ mt: 1 }}>
                   <Typography>Based on {allDecksSnapshots.length} decks — most recent week: {allDecksAverages.weeklyKeys.length ? allDecksAverages.weeklyKeys[allDecksAverages.weeklyKeys.length - 1] : '—'}</Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2, mt: 1 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(auto-fit, minmax(160px, 1fr))' }, gap: 2, mt: 1 }}>
                     {metrics.map((m) => (
                       <Typography key={m.id}>{m.label}: {m.id === 'price_usd' ? (allDecksAverages.latestByMetric.get(m.id) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(allDecksAverages.latestByMetric.get(m.id) as number) : '—') : formatNumber(allDecksAverages.latestByMetric.get(m.id) ?? null)}</Typography>
                     ))}
@@ -1043,7 +1044,7 @@ export default function Analytics() {
               ) : (
                 <Box sx={{ mt: 1 }}>
                   <Typography>Most recent: {snapshots[snapshots.length - 1].created_at ?? '—'}</Typography>
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 2, mt: 1 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(auto-fit, minmax(160px, 1fr))' }, gap: 2, mt: 1 }}>
                     <Typography>Overall: {formatNumber(snapshots[snapshots.length - 1].overall_rating)}</Typography>
                     <Typography>Bracket: {formatNumber(snapshots[snapshots.length - 1].bracket_rating)}</Typography>
                     <Typography>Salt: {formatNumber(snapshots[snapshots.length - 1].salt_rating)}</Typography>

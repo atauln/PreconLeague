@@ -103,8 +103,8 @@ export function SnapshotDetailsModal(props: {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>{snapshot ? snapshot.snapshot_name || `Snapshot ${snapshot.snapshot_id}` : 'Snapshot Details'}</Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+          <Box sx={{ wordBreak: 'break-word' }}>{snapshot ? snapshot.snapshot_name || `Snapshot ${snapshot.snapshot_id}` : 'Snapshot Details'}</Box>
           <Box>
             <TextField
               size="small"
@@ -116,7 +116,7 @@ export function SnapshotDetailsModal(props: {
                 if (val === 'auto') setCompareWeek(null)
                 else setCompareWeek(Number(val))
               }}
-              sx={{ minWidth: 160 }}
+              sx={{ minWidth: { xs: '100%', sm: 160 } }}
             >
               <MenuItem value="auto">Auto (previous week)</MenuItem>
               {Array.from(new Set(snapshots.map((s) => s.week_of_league).filter((w) => w !== undefined && w !== null && w >= 0)))
@@ -130,12 +130,13 @@ export function SnapshotDetailsModal(props: {
       </DialogTitle>
       <DialogContent dividers>
         {snapshot && (
-          <Table size="small">
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander</TableCell>
-                <TableCell>{getCardName(snapshot.commander_id)}</TableCell>
-              </TableRow>
+          <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <Table size="small">
+              <TableBody>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '40%', minWidth: '120px' }}>Commander</TableCell>
+                  <TableCell sx={{ wordBreak: 'break-word' }}>{getCardName(snapshot.commander_id)}</TableCell>
+                </TableRow>
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Overall Rating</TableCell>
                 <TableCell>{renderStatWithPrevDiff(snapshot, 'overall_rating', (v) => fmtNum(v, 1), { percent: true, maximumFractionDigits: 2, compareWeek })}</TableCell>
@@ -302,6 +303,7 @@ export function SnapshotDetailsModal(props: {
               </TableRow>
             </TableBody>
           </Table>
+        </Box>
         )}
 
         
@@ -330,8 +332,8 @@ export function TempSnapshotModal(props: {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>{tempSnapshot ? tempSnapshot.snapshot_name || 'Temporary Snapshot Preview' : 'Temporary Snapshot Preview'}</Box>
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+          <Box sx={{ wordBreak: 'break-word' }}>{tempSnapshot ? tempSnapshot.snapshot_name || 'Temporary Snapshot Preview' : 'Temporary Snapshot Preview'}</Box>
           <Box>
             <Typography variant="caption" color="text.secondary">Preview — not saved</Typography>
           </Box>
@@ -340,12 +342,13 @@ export function TempSnapshotModal(props: {
       <DialogContent dividers>
         {tempSnapshot ? (
           <>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', width: '40%' }}>Commander</TableCell>
-                  <TableCell>{getCardName((tempSnapshot as any).commander_id)}</TableCell>
-                </TableRow>
+            <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <Table size="small">
+                <TableBody>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', width: '40%', minWidth: '120px' }}>Commander</TableCell>
+                    <TableCell sx={{ wordBreak: 'break-word' }}>{getCardName((tempSnapshot as any).commander_id)}</TableCell>
+                  </TableRow>
                 {(
                   [
                     { key: 'overall_rating', label: 'Overall Rating', fmt: (v: any) => formatNumber(v, 1) },
@@ -502,7 +505,8 @@ export function TempSnapshotModal(props: {
                     </TableCell>
                   </TableRow>
               </TableBody>
-              </Table>
+            </Table>
+          </Box>
           </>
         ) : (
           <Box display="flex" justifyContent="center"><CircularProgress /></Box>
