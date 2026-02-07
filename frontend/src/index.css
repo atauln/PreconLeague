@@ -85,3 +85,13 @@ html, body, .card, .btn, .input {
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
 }
 
+/* Mobile-first responsive utilities */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+

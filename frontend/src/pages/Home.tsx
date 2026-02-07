@@ -7,6 +7,7 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActionArea,
   Button,
   TextField,
   Select,
@@ -24,6 +25,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material'
+import { useTheme, useMediaQuery } from '@mui/material'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
 
 interface Snapshot {
@@ -78,6 +80,8 @@ const START_DATE_OF_LEAGUE = new Date('2026-01-12T00:00:00Z')
 const CURRENT_WEEK_OF_LEAGUE = Math.floor((Date.now() - START_DATE_OF_LEAGUE.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
 
 export default function Home() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [decks, setDecks] = useState<Deck[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -222,13 +226,13 @@ export default function Home() {
         <Typography variant="h5">Precon League — Home</Typography>
       </Box>
 
-      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center">
+      <Box mb={4} display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
         <Typography variant="h6">All decks</Typography>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Button component={RouterLink} to="/leaderboards" variant="contained">Leaderboards</Button>
-          <Button component={RouterLink} to="/analytics" variant="outlined">Analytics</Button>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Button component={RouterLink} to="/leaderboards" variant="contained" size="small" sx={{ minHeight: '44px' }}>Leaderboards</Button>
+          <Button component={RouterLink} to="/analytics" variant="outlined" size="small" sx={{ minHeight: '44px' }}>Analytics</Button>
           <Tooltip title="Sample rules for the week">
-            <IconButton onClick={openRules} aria-label="weekly rules">
+            <IconButton onClick={openRules} aria-label="weekly rules" sx={{ minWidth: '44px', minHeight: '44px' }}>
               <InfoOutlined />
             </IconButton>
           </Tooltip>
@@ -245,74 +249,104 @@ export default function Home() {
           )}
           {decks.map((d) => (
             <Grid key={d.deck_id} sx={{ mb: 0, boxSizing: 'border-box', width: { xs: '100%'}}}>
-              <Card sx={{ height: 125 }}>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, height: '100%', boxSizing: 'border-box' }}>
-                  <Box sx={{ minWidth: 25}}>
-                    {d.colors.map((color) => (
-                      <Avatar
-                        key={color}
-                        src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
-                        alt={`${color} mana`}
-                        variant="square"
-                        sx={{ width: 20, height: 20, bgcolor: 'transparent' }}
-                      />
-                    ))}
-                  </Box>
-                  {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (() => {
-                    const cid = d.most_recent_snapshot!.commander_id!
-                    const imgSrcNormal = `https://cards.scryfall.io/normal/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
-                    const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
-                    return (
-                      <MuiLink
-                        component={RouterLink}
-                        to={`/decks/${d.deck_id}`}
-                        sx={{ display: 'block', textDecoration: 'none' }}
-                      >
-                        <Tooltip
-                          title={
-                          <Box>
-                            {imgSrcNormal ? (
-                            <Box
-                              component="img"
-                              src={imgSrcNormal}
-                              alt={d.commander_name ?? cid}
-                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                              loading="lazy"
-                            />
-                            ) : null}
-                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
+              <Card sx={{ minHeight: 125, display: 'flex', flexDirection: 'column' }}>
+                {isMobile ? (
+                  // Mobile: show only image + mana colors; whole area is clickable
+                  d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id ? (
+                    (() => {
+                      const cid = d.most_recent_snapshot!.commander_id!
+                      const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                      return (
+                        <CardActionArea component={RouterLink} to={`/decks/${d.deck_id}`} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, width: '100%' }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center', flex: '0 0 auto' }}>
+                            {d.colors.map((color) => (
+                              <Avatar key={color} src={`https://svgs.scryfall.io/card-symbols/${color}.svg`} alt={`${color} mana`} variant="square" sx={{ width: 20, height: 20, bgcolor: 'transparent' }} />
+                            ))}
                           </Box>
-                          }
-                          placement="left"
-                          arrow
-                          PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
+                          <Box component="img" src={imgSrcThumb} alt={`${d.deck_name} commander art`} sx={{ width: '75%', height: 'auto', objectFit: 'cover', borderRadius: 1, display: 'block' }} loading="lazy" onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }} />
+                        </CardActionArea>
+                      )
+                    })()
+                  ) : (
+                    // No commander image: still make card clickable and show colors (vertical left)
+                    <CardActionArea component={RouterLink} to={`/decks/${d.deck_id}`} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, width: '100%' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center', flex: '0 0 auto' }}>
+                        {d.colors.map((color) => (
+                          <Avatar key={color} src={`https://svgs.scryfall.io/card-symbols/${color}.svg`} alt={`${color} mana`} variant="square" sx={{ width: 20, height: 20, bgcolor: 'transparent' }} />
+                        ))}
+                      </Box>
+                      <Box sx={{ width: '75%', height: 96, borderRadius: 1, bgcolor: 'grey.900' }} />
+                    </CardActionArea>
+                  )
+                ) : (
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flex: 1, boxSizing: 'border-box', flexWrap: { xs: 'wrap', sm: 'nowrap' }, p: { xs: 2, sm: 2 } }}>
+                    <Box sx={{ minWidth: 25, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {d.colors.map((color) => (
+                        <Avatar
+                          key={color}
+                          src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
+                          alt={`${color} mana`}
+                          variant="square"
+                          sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 }, bgcolor: 'transparent' }}
+                        />
+                      ))}
+                    </Box>
+                    {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (() => {
+                      const cid = d.most_recent_snapshot!.commander_id!
+                      const imgSrcNormal = `https://cards.scryfall.io/normal/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                      const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                      return (
+                        <MuiLink
+                          component={RouterLink}
+                          to={`/decks/${d.deck_id}`}
+                          sx={{ display: 'block', textDecoration: 'none' }}
                         >
-                          <Box
-                          component="img"
-                          src={imgSrcThumb}
-                          alt={`${d.deck_name} commander art`}
-                          sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
-                          loading="lazy"
-                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
-                          />
-                        </Tooltip>
-                      </MuiLink>
-                    )
-                  })()}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle1" noWrap>{d.deck_name}</Typography>
-                    <Typography color="text.secondary">Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-                    {d.moxfield_deck_url && (
-                      <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer">View source</MuiLink>
-                    )}
-                    {d.archidekt_deck_url && (
-                      <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer">View source</MuiLink>
-                    )}
-                    <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined">Edit</Button>
-                  </Box>
-                </CardContent>
+                          <Tooltip
+                            title={
+                            <Box>
+                              {imgSrcNormal ? (
+                              <Box
+                                component="img"
+                                src={imgSrcNormal}
+                                alt={d.commander_name ?? cid}
+                                sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                loading="lazy"
+                              />
+                              ) : null}
+                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
+                            </Box>
+                            }
+                            placement="left"
+                            arrow
+                            PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
+                          >
+                            <Box
+                            component="img"
+                            src={imgSrcThumb}
+                            alt={`${d.deck_name} commander art`}
+                            sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
+                            loading="lazy"
+                            onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
+                            />
+                          </Tooltip>
+                        </MuiLink>
+                      )
+                    })()}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle1" sx={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{d.deck_name}</Typography>
+                      <Typography color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, width: { xs: '100%', sm: 'auto' } }}>
+                      {d.moxfield_deck_url && (
+                        <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
+                      )}
+                      {d.archidekt_deck_url && (
+                        <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
+                      )}
+                      <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined" size="small" sx={{ minHeight: '44px' }}>Edit</Button>
+                    </Box>
+                  </CardContent>
+                )}
               </Card>
             </Grid>
           ))}
@@ -324,14 +358,15 @@ export default function Home() {
         <Typography color="text.secondary" sx={{ mb: 2 }}>Provide an Archidekt or Moxfield deck URL and click Submit to register it into the league.</Typography>
 
         <Box component="form" onSubmit={handleCreate} sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <FormControl sx={{ minWidth: 160 }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <FormControl sx={{ minWidth: { xs: '100%', sm: 160 } }}>
               <InputLabel id="source-label">Source</InputLabel>
               <Select
                 labelId="source-label"
                 value={source}
                 label="Source"
                 onChange={(e) => setSource(e.target.value as 'moxfield' | 'archidekt')}
+                sx={{ minHeight: '56px' }}
               >
                 <MenuItem value="moxfield">Moxfield</MenuItem>
                 <MenuItem value="archidekt">Archidekt</MenuItem>
@@ -345,10 +380,10 @@ export default function Home() {
               placeholder="https://moxfield.com/decks..."
               required
               label="URL"
-              sx={{ flex: 1, minWidth: 240 }}
+              sx={{ flex: 1, minWidth: { xs: '100%', sm: 240 } }}
             />
 
-            <Button type="submit" variant="contained" disabled={creating} sx={{ whiteSpace: 'nowrap' }}>
+            <Button type="submit" variant="contained" disabled={creating} sx={{ whiteSpace: 'nowrap', minHeight: '56px', minWidth: { xs: '100%', sm: 'auto' } }}>
               {creating ? 'Creating…' : 'Submit'}
             </Button>
           </Box>
