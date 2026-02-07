@@ -201,8 +201,8 @@ export default function Leaderboards() {
           {/* Desktop / wide screens: keep table */}
           {!isMobile && (
             <Box sx={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              <Paper sx={{ width: 'max-content' }}>
-                <Table>
+              <Paper sx={{ width: '100%' }}>
+                <Table sx={{ width: '100%' }}>
                   <TableHead>
                     <TableRow>
                       <TableCell>#</TableCell>
