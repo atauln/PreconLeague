@@ -7,6 +7,7 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActionArea,
   Button,
   TextField,
   Select,
@@ -24,6 +25,7 @@ import {
   IconButton,
   Tooltip,
 } from '@mui/material'
+import { useTheme, useMediaQuery } from '@mui/material'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
 
 interface Snapshot {
@@ -78,6 +80,8 @@ const START_DATE_OF_LEAGUE = new Date('2026-01-12T00:00:00Z')
 const CURRENT_WEEK_OF_LEAGUE = Math.floor((Date.now() - START_DATE_OF_LEAGUE.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
 
 export default function Home() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [decks, setDecks] = useState<Deck[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -246,73 +250,103 @@ export default function Home() {
           {decks.map((d) => (
             <Grid key={d.deck_id} sx={{ mb: 0, boxSizing: 'border-box', width: { xs: '100%'}}}>
               <Card sx={{ minHeight: 125, display: 'flex', flexDirection: 'column' }}>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flex: 1, boxSizing: 'border-box', flexWrap: { xs: 'wrap', sm: 'nowrap' }, p: { xs: 2, sm: 2 } }}>
-                  <Box sx={{ minWidth: 25, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    {d.colors.map((color) => (
-                      <Avatar
-                        key={color}
-                        src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
-                        alt={`${color} mana`}
-                        variant="square"
-                        sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 }, bgcolor: 'transparent' }}
-                      />
-                    ))}
-                  </Box>
-                  {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (() => {
-                    const cid = d.most_recent_snapshot!.commander_id!
-                    const imgSrcNormal = `https://cards.scryfall.io/normal/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
-                    const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
-                    return (
-                      <MuiLink
-                        component={RouterLink}
-                        to={`/decks/${d.deck_id}`}
-                        sx={{ display: 'block', textDecoration: 'none' }}
-                      >
-                        <Tooltip
-                          title={
-                          <Box>
-                            {imgSrcNormal ? (
-                            <Box
-                              component="img"
-                              src={imgSrcNormal}
-                              alt={d.commander_name ?? cid}
-                              sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
-                              loading="lazy"
-                            />
-                            ) : null}
-                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
+                {isMobile ? (
+                  // Mobile: show only image + mana colors; whole area is clickable
+                  d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id ? (
+                    (() => {
+                      const cid = d.most_recent_snapshot!.commander_id!
+                      const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                      return (
+                        <CardActionArea component={RouterLink} to={`/decks/${d.deck_id}`} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, width: '100%' }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center', flex: '0 0 auto' }}>
+                            {d.colors.map((color) => (
+                              <Avatar key={color} src={`https://svgs.scryfall.io/card-symbols/${color}.svg`} alt={`${color} mana`} variant="square" sx={{ width: 20, height: 20, bgcolor: 'transparent' }} />
+                            ))}
                           </Box>
-                          }
-                          placement="left"
-                          arrow
-                          PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
+                          <Box component="img" src={imgSrcThumb} alt={`${d.deck_name} commander art`} sx={{ width: '75%', height: 'auto', objectFit: 'cover', borderRadius: 1, display: 'block' }} loading="lazy" onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }} />
+                        </CardActionArea>
+                      )
+                    })()
+                  ) : (
+                    // No commander image: still make card clickable and show colors (vertical left)
+                    <CardActionArea component={RouterLink} to={`/decks/${d.deck_id}`} sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 1, width: '100%' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'center', flex: '0 0 auto' }}>
+                        {d.colors.map((color) => (
+                          <Avatar key={color} src={`https://svgs.scryfall.io/card-symbols/${color}.svg`} alt={`${color} mana`} variant="square" sx={{ width: 20, height: 20, bgcolor: 'transparent' }} />
+                        ))}
+                      </Box>
+                      <Box sx={{ width: '75%', height: 96, borderRadius: 1, bgcolor: 'grey.900' }} />
+                    </CardActionArea>
+                  )
+                ) : (
+                  <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flex: 1, boxSizing: 'border-box', flexWrap: { xs: 'wrap', sm: 'nowrap' }, p: { xs: 2, sm: 2 } }}>
+                    <Box sx={{ minWidth: 25, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {d.colors.map((color) => (
+                        <Avatar
+                          key={color}
+                          src={`https://svgs.scryfall.io/card-symbols/${color}.svg`}
+                          alt={`${color} mana`}
+                          variant="square"
+                          sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 }, bgcolor: 'transparent' }}
+                        />
+                      ))}
+                    </Box>
+                    {d.most_recent_snapshot !== null && d.most_recent_snapshot.commander_id && (() => {
+                      const cid = d.most_recent_snapshot!.commander_id!
+                      const imgSrcNormal = `https://cards.scryfall.io/normal/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                      const imgSrcThumb = `https://cards.scryfall.io/art_crop/front/${cid.charAt(0)}/${cid.charAt(1)}/${cid}.jpg`
+                      return (
+                        <MuiLink
+                          component={RouterLink}
+                          to={`/decks/${d.deck_id}`}
+                          sx={{ display: 'block', textDecoration: 'none' }}
                         >
-                          <Box
-                          component="img"
-                          src={imgSrcThumb}
-                          alt={`${d.deck_name} commander art`}
-                          sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
-                          loading="lazy"
-                          onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
-                          />
-                        </Tooltip>
-                      </MuiLink>
-                    )
-                  })()}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle1" sx={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{d.deck_name}</Typography>
-                    <Typography color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, width: { xs: '100%', sm: 'auto' } }}>
-                    {d.moxfield_deck_url && (
-                      <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
-                    )}
-                    {d.archidekt_deck_url && (
-                      <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
-                    )}
-                    <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined" size="small" sx={{ minHeight: '44px' }}>Edit</Button>
-                  </Box>
-                </CardContent>
+                          <Tooltip
+                            title={
+                            <Box>
+                              {imgSrcNormal ? (
+                              <Box
+                                component="img"
+                                src={imgSrcNormal}
+                                alt={d.commander_name ?? cid}
+                                sx={{ width: 260, height: 'auto', display: 'block', borderRadius: 1 }}
+                                loading="lazy"
+                              />
+                              ) : null}
+                              <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{d.commander_name ?? cid}</Typography>
+                            </Box>
+                            }
+                            placement="left"
+                            arrow
+                            PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
+                          >
+                            <Box
+                            component="img"
+                            src={imgSrcThumb}
+                            alt={`${d.deck_name} commander art`}
+                            sx={{ height: 100, width: 'auto', objectFit: 'cover', borderRadius: 1 }}
+                            loading="lazy"
+                            onError={(e: any) => { e.currentTarget.onerror = null; e.currentTarget.src = '/fallback.jpg' }}
+                            />
+                          </Tooltip>
+                        </MuiLink>
+                      )
+                    })()}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle1" sx={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{d.deck_name}</Typography>
+                      <Typography color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>Owner: {d.user_name ?? d.user_id} • source: {d.source}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, width: { xs: '100%', sm: 'auto' } }}>
+                      {d.moxfield_deck_url && (
+                        <MuiLink href={d.moxfield_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
+                      )}
+                      {d.archidekt_deck_url && (
+                        <MuiLink href={d.archidekt_deck_url} target="_blank" rel="noreferrer" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>View source</MuiLink>
+                      )}
+                      <Button component={RouterLink} to={`/decks/${d.deck_id}`} variant="outlined" size="small" sx={{ minHeight: '44px' }}>Edit</Button>
+                    </Box>
+                  </CardContent>
+                )}
               </Card>
             </Grid>
           ))}
