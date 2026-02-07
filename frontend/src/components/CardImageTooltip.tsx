@@ -41,6 +41,10 @@ export default function CardImageTooltip(props: Props) {
       }
       placement="top"
       arrow
+      // Remove the 700ms default touch delay so mobile users see the tooltip immediately
+      enterTouchDelay={0}
+      // short leave delay on touch to avoid abrupt disappearance
+      leaveTouchDelay={5000}
       PopperProps={{ modifiers: [{ name: 'flip', enabled: false }] }}
     >
       {isImportant ? (
