@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Vite + React + TypeScript frontend
 # Build stage
-FROM node:18-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 ENV PATH /app/node_modules/.bin:$PATH
 
