@@ -453,12 +453,14 @@ export function TempSnapshotModal(props: {
                   <TableCell sx={{ fontWeight: 'bold' }}>Week</TableCell>
                   <TableCell>{(tempSnapshot as any).week_of_league ?? '—'}</TableCell>
                 </TableRow>
-                  <TableRow>
-                    <Button size="small" onClick={copyAddedCardsToClipboard} sx={{ ml: 1 }} disabled={!tempSnapshot || (tempSnapshot as any).added_cards.length === 0}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Library changes
+                  <Button size="small" onClick={copyAddedCardsToClipboard} sx={{ ml: 1 }} disabled={!tempSnapshot || (tempSnapshot as any).added_cards?.length === 0}>
                     <ContentCopyIcon fontSize="small" />
                   </Button>
-                    <TableCell>
-                      <Box>
+                  </TableCell>
+                  <TableCell>
+                  <Box>
                         <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
                           <Chip label={((tempSnapshot as any).added_cards || []).reduce((sum: number, c: any) => sum + (c.quantity || 0), 0)} color='default' size="small" />
                           <Button size="small" onClick={() => setShowTempLibraryDetails((p) => !p)} sx={{ ml: 'auto' }}>{showTempLibraryDetails ? 'Hide' : 'Show'} details</Button>
