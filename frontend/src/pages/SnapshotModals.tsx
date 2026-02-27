@@ -16,9 +16,11 @@ import {
   TextField,
   MenuItem,
   Grid,
-  Chip
+  Chip,
+  Snackbar
 } from '@mui/material'
 import CardImageTooltip from '../components/CardImageTooltip'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 type Snapshot = {
   snapshot_id: number
@@ -96,6 +98,18 @@ export function SnapshotDetailsModal(props: {
   } = props
 
   const [showLibraryDetails, setShowLibraryDetails] = useState(false)
+  const [showSnackbar, setShowSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null)
+
+  const copyAddedCardsToClipboard = () => {
+    if (!changedCards) return
+    const lines = changedCards.added.map((c) => {
+      const cardName = getCardName(c.card_id ?? undefined)
+      return `${c.quantity} ${cardName}`
+    })
+    navigator.clipboard.writeText(lines.join('\n'))
+    setShowSnackbar({ message: 'Added cards copied to clipboard', severity: 'success' })
+    setTimeout(() => setShowSnackbar(null), 3000)
+  }
 
   // local aliases for consistency
   const fmtNum = (v?: number | null, mfd = 1) => (props as any).formatNumber ? (props as any).formatNumber(v, mfd) : (v === null || v === undefined ? '—' : String(v))
@@ -204,7 +218,11 @@ export function SnapshotDetailsModal(props: {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>Library changes</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Library changes
+                  <Button size="small" onClick={copyAddedCardsToClipboard} sx={{ ml: 1 }} disabled={!changedCards || changedCards.added.length === 0}>
+                    <ContentCopyIcon fontSize="small" />
+                  </Button>
+                </TableCell>
                 <TableCell>
                   <Box>
                     <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
@@ -311,6 +329,15 @@ export function SnapshotDetailsModal(props: {
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+      {showSnackbar ? (
+        <Snackbar
+          open={true}
+          autoHideDuration={3000}
+          onClose={() => setShowSnackbar(null)}
+          message={showSnackbar.message}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        />
+      ) : null}
     </Dialog>
   )
 }
