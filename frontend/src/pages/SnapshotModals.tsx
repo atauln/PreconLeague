@@ -355,6 +355,24 @@ export function TempSnapshotModal(props: {
 }) {
   const { open, onClose, tempSnapshot, tempPrevSnapshot, fetchCardObject, cardCache, getCardName, formatNumber, formatCurrency } = props
   const [showTempLibraryDetails, setShowTempLibraryDetails] = useState(false)
+  const [showSnackbar, setShowSnackbar] = useState<{ message: string; severity: 'success' | 'error' } | null>(null)
+
+  const copyAddedCardsToClipboard = () => {
+    if (!tempSnapshot) return
+    const addedCards = tempSnapshot.added_cards as Array<{ card_id?: string | null; card_name?: string | null; quantity: number }> | undefined
+    if (!addedCards || addedCards.length === 0) return
+
+    const lines = addedCards.map((c) => {
+      const cardName = getCardName(c.card_id ?? undefined)
+      return `${c.quantity}x ${cardName}`
+    }).join('\n')
+
+    navigator.clipboard.writeText(lines).then(() => {
+      setShowSnackbar({ message: 'Added cards copied to clipboard', severity: 'success' })
+    }).catch(() => {
+      setShowSnackbar({ message: 'Failed to copy added cards', severity: 'error' })
+    })
+  }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -436,7 +454,9 @@ export function TempSnapshotModal(props: {
                   <TableCell>{(tempSnapshot as any).week_of_league ?? '—'}</TableCell>
                 </TableRow>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Library changes</TableCell>
+                    <Button size="small" onClick={copyAddedCardsToClipboard} sx={{ ml: 1 }} disabled={!tempSnapshot || (tempSnapshot as any).added_cards.length === 0}>
+                    <ContentCopyIcon fontSize="small" />
+                  </Button>
                     <TableCell>
                       <Box>
                         <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
@@ -542,6 +562,15 @@ export function TempSnapshotModal(props: {
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+      {showSnackbar ? (
+        <Snackbar
+          open={true}
+          autoHideDuration={3000}
+          onClose={() => setShowSnackbar(null)}
+          message={showSnackbar.message}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        />
+      ) : null}
     </Dialog>
   )
 }
